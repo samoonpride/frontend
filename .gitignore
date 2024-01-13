@@ -33,3 +33,6 @@ build/
 
 ### OS ###
 .DS_Store
+
+# properties files
+application-prod.properties
