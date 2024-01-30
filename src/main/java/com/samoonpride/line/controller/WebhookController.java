@@ -5,7 +5,7 @@ import com.linecorp.bot.spring.boot.handler.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.handler.annotation.LineMessageHandler;
 import com.linecorp.bot.webhook.model.*;
 import com.samoonpride.line.dto.MediaDto;
-import com.samoonpride.line.dto.ReportDto;
+import com.samoonpride.line.dto.IssueDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.serviceImpl.*;
 import lombok.AllArgsConstructor;
@@ -25,7 +25,7 @@ public class WebhookController {
     private final VoiceToTextServiceImpl voiceToTextService;
     private final ImageServiceImpl imageService;
     private final VideoServiceImpl videoService;
-    private final ReportListServiceImpl reportListService;
+    private final IssueListServiceImpl issueListService;
     private final LineUserListServiceImpl lineUserListService;
 
     @EventMapping
@@ -37,14 +37,14 @@ public class WebhookController {
         log.info("Got message from user: " + userId);
         UserDto userDto = lineUserListService.findLineUser(userId);
 
-        ReportDto report = reportListService.findByUserId(userDto);
+        IssueDto issue = issueListService.findByUserId(userDto);
         if (message instanceof TextMessageContent) {
             String text = ((TextMessageContent) message).text();
             if (Objects.equals(text, "สร้างรายงาน")) {
-                reportListService.sendReport(report);
-                log.info("Create report success");
+                issueListService.sendIssue(issue);
+                log.info("Create issue success");
             } else {
-                report.setTitle(((TextMessageContent) message).text());
+                issue.setTitle(((TextMessageContent) message).text());
             }
         } else if (message instanceof AudioMessageContent) {
             log.info("Got audio message");
@@ -52,7 +52,7 @@ public class WebhookController {
         } else if (message instanceof ImageMessageContent) {
             log.info("Got image message");
             MediaDto mediaDto = imageService.createImage(userId, message.id());
-            report.getMedia().add(mediaDto);
+            issue.getMedia().add(mediaDto);
             log.info("Create image success");
         } else if (message instanceof VideoMessageContent) {
             log.info("Got video message");
@@ -63,11 +63,11 @@ public class WebhookController {
             String latitude = String.valueOf(((LocationMessageContent) message).latitude());
             String longitude = String.valueOf(((LocationMessageContent) message).longitude());
             log.info("Got latitude: " + latitude + " and longitude: " + longitude);
-            report.setLatitude(((LocationMessageContent) message).latitude());
-            report.setLongitude(((LocationMessageContent) message).longitude());
+            issue.setLatitude(((LocationMessageContent) message).latitude());
+            issue.setLongitude(((LocationMessageContent) message).longitude());
             log.info("Get location success");
         }
-        log.info("Report: " + report.toString());
+        log.info("Issue: " + issue.toString());
         return null;
     }
 }

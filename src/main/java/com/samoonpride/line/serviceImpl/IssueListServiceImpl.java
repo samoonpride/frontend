@@ -4,9 +4,9 @@ package com.samoonpride.line.serviceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samoonpride.line.config.ApiConfig;
-import com.samoonpride.line.dto.ReportDto;
+import com.samoonpride.line.dto.IssueDto;
 import com.samoonpride.line.dto.UserDto;
-import com.samoonpride.line.service.ReportListService;
+import com.samoonpride.line.service.IssueListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpEntity;
@@ -21,36 +21,36 @@ import java.util.List;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class ReportListServiceImpl implements ReportListService {
-    private final List<ReportDto> reportDtoList = new ArrayList<>();
+public class IssueListServiceImpl implements IssueListService {
+    private final List<IssueDto> issueDtoList = new ArrayList<>();
     private final RestTemplate restTemplate = new RestTemplate();
     private final ApiConfig apiConfig;
 
     @Override
-    public void addReport(ReportDto reportDto) {
-        if (reportDtoList.contains(reportDto)) {
+    public void addIssue(IssueDto issueDto) {
+        if (issueDtoList.contains(issueDto)) {
             return;
         }
-        reportDtoList.add(reportDto);
+        issueDtoList.add(issueDto);
     }
 
     @Override
-    public ReportDto findByUserId(UserDto userDto) {
-        return reportDtoList.stream()
-                .filter(reportDto -> reportDto.getUser().getKey().equals(userDto.getKey()))
+    public IssueDto findByUserId(UserDto userDto) {
+        return issueDtoList.stream()
+                .filter(issueDto -> issueDto.getUser().getKey().equals(userDto.getKey()))
                 .findFirst()
                 .orElseGet(() -> {
-                    ReportDto reportDto = new ReportDto(userDto);
-                    this.addReport(reportDto);
-                    return reportDto;
+                    IssueDto issueDto = new IssueDto(userDto);
+                    this.addIssue(issueDto);
+                    return issueDto;
                 });
     }
 
-    // send report to backend and remove from list
+    // send issue to backend and remove from list
     @Override
-    public void sendReport(ReportDto reportDto) {
+    public void sendIssue(IssueDto issueDto) {
         try {
-            String jsonBody = new ObjectMapper().writeValueAsString(reportDto);
+            String jsonBody = new ObjectMapper().writeValueAsString(issueDto);
             HttpHeaders jsonHeaders = new HttpHeaders();
             jsonHeaders.add("Content-Type", "application/json");
 
@@ -60,7 +60,7 @@ public class ReportListServiceImpl implements ReportListService {
             log.info("Request: " + jsonBody);
             // Send the POST request and get the response
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                    apiConfig.apiBackendUrl + "/report/create",
+                    apiConfig.apiBackendUrl + "/issue/create",
                     requestEntity,
                     String.class
             );
@@ -71,6 +71,6 @@ public class ReportListServiceImpl implements ReportListService {
         } catch (JsonProcessingException e) {
             System.out.printf("Error: %s\n", e.getMessage());
         }
-        reportDtoList.remove(reportDto);
+        issueDtoList.remove(issueDto);
     }
 }
