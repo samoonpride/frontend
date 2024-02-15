@@ -15,6 +15,7 @@ public class IssueDto {
     private String title;
     private Double latitude;
     private Double longitude;
+    private String thumbnailPath;
     private List<MediaDto> media = new ArrayList<>();
 
     public IssueDto(UserDto userDto) {

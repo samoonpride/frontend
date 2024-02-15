@@ -1,20 +1,20 @@
 package com.samoonpride.line.serviceImpl;
 
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samoonpride.line.config.ApiConfig;
+import com.samoonpride.line.config.WebClientConfig;
+import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.IssueDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.service.IssueListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +25,8 @@ public class IssueListServiceImpl implements IssueListService {
     private final List<IssueDto> issueDtoList = new ArrayList<>();
     private final RestTemplate restTemplate = new RestTemplate();
     private final ApiConfig apiConfig;
+    private final WebClientConfig webClientConfig;
+    private final ObjectMapper objectMapper;
 
     @Override
     public void addIssue(IssueDto issueDto) {
@@ -37,7 +39,7 @@ public class IssueListServiceImpl implements IssueListService {
     @Override
     public IssueDto findByUserId(UserDto userDto) {
         return issueDtoList.stream()
-                .filter(issueDto -> issueDto.getUser().getKey().equals(userDto.getKey()))
+                .filter(issueDto -> issueDto.getUser().getUserId().equals(userDto.getUserId()))
                 .findFirst()
                 .orElseGet(() -> {
                     IssueDto issueDto = new IssueDto(userDto);
@@ -49,28 +51,30 @@ public class IssueListServiceImpl implements IssueListService {
     // send issue to backend and remove from list
     @Override
     public void sendIssue(IssueDto issueDto) {
-        try {
-            String jsonBody = new ObjectMapper().writeValueAsString(issueDto);
-            HttpHeaders jsonHeaders = new HttpHeaders();
-            jsonHeaders.add("Content-Type", "application/json");
-
-            // send to backend
-            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, jsonHeaders);
-
-            log.info("Request: " + jsonBody);
-            // Send the POST request and get the response
-            ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                    apiConfig.apiBackendUrl + "/issue/create",
-                    requestEntity,
-                    String.class
-            );
-
-            // Extract and print the response
-            String responseBody = responseEntity.getStatusCode() + " " + responseEntity.getBody();
-            log.info("Response: " + responseBody);
-        } catch (JsonProcessingException e) {
-            System.out.printf("Error: %s\n", e.getMessage());
-        }
+        URI uri = URI.create(apiConfig.apiBackendUrl + "/issue/create");
+        String response = webClientConfig.webClient()
+                .post()
+                .uri(uri)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(issueDto)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info("Response: " + response);
         issueDtoList.remove(issueDto);
+    }
+
+    @Override
+    public List<IssueBubbleDto> getLatestIssues(String userId) {
+        URI uri = URI.create(apiConfig.apiBackendUrl + "/issue/line-user/get/" + userId + "/latest");
+        List<IssueBubbleDto> issueBubbleDtoList = webClientConfig.webClient()
+                .get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<IssueBubbleDto>>() {
+                })
+                .block();
+        log.info("IssueBubbleDtoList: " + issueBubbleDtoList);
+        return issueBubbleDtoList;
     }
 }
