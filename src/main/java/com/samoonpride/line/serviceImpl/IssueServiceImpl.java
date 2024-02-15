@@ -20,6 +20,12 @@ import java.util.concurrent.ExecutionException;
 @AllArgsConstructor
 @Service
 public class IssueServiceImpl implements IssueService {
+    private static final String ISSUE_SUCCESS_MESSAGE = "เสร็จสิ้นการสร้างรายงาน";
+    private static final String ERROR_MESSAGE = "เกิดข้อผิดพลาด";
+    private static final String TITLE_MISSING_MESSAGE = "กรุณาใส่หัวข้อ";
+    private static final String MEDIA_MISSING_MESSAGE = "กรุณาใส่รูปภาพหรือวิดีโอ";
+    private static final String LOCATION_MISSING_MESSAGE = "กรุณาใส่ตำแหน่งที่อยู่";
+
     private final IssueListServiceImpl issueListService;
     private final VoiceToTextServiceImpl voiceToTextService;
     private final ImageServiceImpl imageService;
@@ -29,29 +35,41 @@ public class IssueServiceImpl implements IssueService {
     public TextMessage createIssue(UserDto userDto, MessageContent message) throws IOException, ExecutionException, InterruptedException {
         log.info("Got message from user: " + userDto.getUserId());
         IssueDto issue = issueListService.findByUserId(userDto);
+        try {
+            if (message instanceof TextMessageContent) {
+                TextMessage textMessage = handleTextMessage(issue, (TextMessageContent) message);
+                if (textMessage != null) {
+                    return textMessage;
+                }
+            } else if (message instanceof AudioMessageContent) {
+                handleAudioMessage(issue, (AudioMessageContent) message);
+            } else if (message instanceof ImageMessageContent) {
+                handleImageMessage(issue, userDto.getUserId(), (ImageMessageContent) message);
+            } else if (message instanceof VideoMessageContent) {
+                handleVideoMessage(issue, userDto.getUserId(), (VideoMessageContent) message);
+            } else if (message instanceof LocationMessageContent) {
+                handleLocationMessage(issue, (LocationMessageContent) message);
+            }
 
-        if (message instanceof TextMessageContent) {
-            return handleTextMessage(issue, (TextMessageContent) message);
-        } else if (message instanceof AudioMessageContent) {
-            handleAudioMessage(issue, (AudioMessageContent) message);
-        } else if (message instanceof ImageMessageContent) {
-            handleImageMessage(issue, userDto.getUserId(), (ImageMessageContent) message);
-        } else if (message instanceof VideoMessageContent) {
-            handleVideoMessage(issue, userDto.getUserId(), (VideoMessageContent) message);
-        } else if (message instanceof LocationMessageContent) {
-            handleLocationMessage(issue, (LocationMessageContent) message);
+            if (isIssueComplete(issue)) {
+                issueListService.sendIssue(issue);
+                log.info("Create issue success");
+                return new TextMessage(ISSUE_SUCCESS_MESSAGE);
+            } else {
+                return checkIssueIncomplete(issue);
+            }
+
+        } catch (Exception e) {
+            log.error("Error: ", e);
+            return new TextMessage(ERROR_MESSAGE);
+        } finally {
+            log.info("Issue : " + issue);
         }
-        log.info("Issue: " + issue);
-        return null;
     }
 
     private TextMessage handleTextMessage(IssueDto issue, TextMessageContent textMessage) {
         String text = textMessage.text();
-        if (Objects.equals(text, "เสร็จสิ้น")) {
-            issueListService.sendIssue(issue);
-            log.info("Create issue success");
-            return new TextMessage("เสร็จสิ้นการสร้างรายงาน");
-        } else if (Objects.equals(text, "ปัญหาล่าสุด")) {
+        if (Objects.equals(text, "ปัญหาล่าสุด")) {
             return new TextMessage(issueListService.getLatestIssues(issue.getUser().getUserId()).toString());
         } else {
             issue.setTitle(text);
@@ -99,5 +117,23 @@ public class IssueServiceImpl implements IssueService {
         issue.setLatitude(latitude);
         issue.setLongitude(longitude);
         log.info("Get location success");
+    }
+
+    private boolean isIssueComplete(IssueDto issue) {
+        return issue.getTitle() != null && !issue.getMedia().isEmpty() && issue.getLatitude() != null && issue.getLongitude() != null;
+    }
+
+    private TextMessage checkIssueIncomplete(IssueDto issue) {
+        if (issue.getTitle() == null) {
+            log.info("Issue not have title");
+            return new TextMessage(TITLE_MISSING_MESSAGE);
+        } else if (issue.getMedia().isEmpty()) {
+            log.info("Issue not have media");
+            return new TextMessage(MEDIA_MISSING_MESSAGE);
+        } else if (issue.getLatitude() == null || issue.getLongitude() == null) {
+            log.info("Issue not have location");
+            return new TextMessage(LOCATION_MISSING_MESSAGE);
+        }
+        return null;
     }
 }
