@@ -1,17 +1,14 @@
 package com.samoonpride.line.serviceImpl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.bot.messaging.client.MessagingApiClient;
 import com.samoonpride.line.config.ApiConfig;
+import com.samoonpride.line.config.WebClientConfig;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateLineUserRequest;
 import com.samoonpride.line.service.LineUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 public class LineUserServiceImpl implements LineUserService {
     private final MessagingApiClient messagingApiClient;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final WebClientConfig webClientConfig;
     private final ApiConfig apiConfig;
 
     @Override
@@ -30,27 +28,15 @@ public class LineUserServiceImpl implements LineUserService {
                     userId,
                     profile.body().displayName()
             );
-            try {
-                String jsonBody = new ObjectMapper().writeValueAsString(request);
-                HttpHeaders jsonHeaders = new HttpHeaders();
-                jsonHeaders.add("Content-Type", "application/json");
-                // send to backend
-                HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, jsonHeaders);
+            webClientConfig.webClient()
+                    .post()
+                    .uri(apiConfig.apiBackendUrl + "/line-user/create")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .subscribe(response -> log.info("Response: " + response));
 
-                log.info("Request: " + jsonBody);
-                // Send the POST request and get the response
-                ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                        apiConfig.apiBackendUrl + "/line-user/create",
-                        requestEntity,
-                        String.class
-                );
-
-                // Extract and print the response
-                String responseBody = responseEntity.getStatusCode() + " " + responseEntity.getBody();
-                log.info("Response: " + responseBody);
-            } catch (JsonProcessingException e) {
-                System.out.printf("Error: %s\n", e.getMessage());
-            }
         });
         return createUserDto(userId);
     }
@@ -58,7 +44,7 @@ public class LineUserServiceImpl implements LineUserService {
     private UserDto createUserDto(String userId) {
         return UserDto.builder()
                 .type("LINE")
-                .key(userId)
+                .userId(userId)
                 .build();
     }
 }

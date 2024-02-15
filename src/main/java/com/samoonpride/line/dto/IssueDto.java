@@ -10,14 +10,15 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReportDto {
+public class IssueDto {
     private UserDto user;
     private String title;
     private Double latitude;
     private Double longitude;
+    private String thumbnailPath;
     private List<MediaDto> media = new ArrayList<>();
 
-    public ReportDto(UserDto userDto) {
+    public IssueDto(UserDto userDto) {
         this.user = userDto;
     }
 }

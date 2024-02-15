@@ -25,7 +25,7 @@ public class LineUserListServiceImpl implements LineUserListService {
     @Override
     public UserDto findLineUser(String userId) {
         return userDtoList.stream()
-                .filter(userDto -> userDto.getKey().equals(userId))
+                .filter(userDto -> userDto.getUserId().equals(userId))
                 .findFirst()
                 .orElseGet(() -> {
                     UserDto userDto = lineUserService.createLineUser(userId);

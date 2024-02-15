@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.bot.client.base.BlobContent;
 import com.linecorp.bot.messaging.client.MessagingApiBlobClient;
-import com.linecorp.bot.messaging.model.Message;
-import com.linecorp.bot.messaging.model.TextMessage;
 import com.linecorp.bot.webhook.model.AudioMessageContent;
 import com.samoonpride.line.config.ApiConfig;
 import com.samoonpride.line.service.VoiceToTextService;
@@ -27,11 +25,12 @@ public class VoiceToTextServiceImpl implements VoiceToTextService {
     private final MessagingApiBlobClient lineMessagingClient;
     private final ApiConfig apiConfig;
 
-    public Message handleAudioMessage(AudioMessageContent event) throws IOException, ExecutionException, InterruptedException {
+    public String handleAudioMessage(AudioMessageContent event) throws IOException, ExecutionException, InterruptedException {
         System.out.printf("Got audio message %s\n", event.id());
-        String result = sendAudioToVoiceToText(lineMessagingClient.getMessageContent(event.id()).get().body());
+        BlobContent blobContent = lineMessagingClient.getMessageContent(event.id()).get().body();
+        String result = sendAudioToVoiceToText(blobContent);
         System.out.printf("Got result %s\n", result);
-		return new TextMessage(result);
+        return result;
     }
 
     private String sendAudioToVoiceToText(BlobContent blobContent) throws IOException {
