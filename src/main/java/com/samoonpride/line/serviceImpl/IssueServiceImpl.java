@@ -61,7 +61,8 @@ public class IssueServiceImpl implements IssueService {
 
     private void handleAudioMessage(IssueDto issue, AudioMessageContent audioMessage) throws IOException, ExecutionException, InterruptedException {
         log.info("Got audio message");
-        String text = voiceToTextService.handleAudioMessage(issue, audioMessage);
+        String text = voiceToTextService.handleAudioMessage(audioMessage);
+        issue.setTitle(text);
     }
 
     private void handleImageMessage(IssueDto issue, String userId, ImageMessageContent imageMessage) throws IOException, ExecutionException, InterruptedException {

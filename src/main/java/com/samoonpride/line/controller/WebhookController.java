@@ -24,14 +24,10 @@ public class WebhookController {
     private final IssueServiceImpl issueService;
 
     @EventMapping
-    public Message handleMessageEvent(MessageEvent event) throws IOException, ExecutionException, InterruptedException {
-        return checkMessage(event.source().userId(), event.message());
-    }
-
-    private Message checkMessage(String userId, MessageContent message) throws IOException, ExecutionException, InterruptedException {
+    public Message handleMessageEvent(MessageEvent event) {
         try {
-            UserDto userDto = lineUserListService.findLineUser(userId);
-            return issueService.createIssue(userDto, message);
+            UserDto userDto = lineUserListService.findLineUser(event.source().userId());
+            return issueService.createIssue(userDto, event.message());
         } catch (IOException | ExecutionException | InterruptedException e) {
             return null;
         }
