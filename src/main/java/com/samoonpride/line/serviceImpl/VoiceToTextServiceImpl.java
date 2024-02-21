@@ -51,7 +51,7 @@ public class VoiceToTextServiceImpl implements VoiceToTextService {
 
         // Create MultipartBodyBuilder with the audio file
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
-        bodyBuilder.part("file", resource);
+        bodyBuilder.part("audio", resource);
 
         // Create RestTemplate and send the file to the Python microservice
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity = new HttpEntity<>(bodyBuilder.build(), headers);
