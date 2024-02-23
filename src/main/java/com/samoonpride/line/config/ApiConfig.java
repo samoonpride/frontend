@@ -10,4 +10,7 @@ public class ApiConfig {
 
     @Value("${api.voice.to.text.url}")
     public String apiVoiceToTextUrl;
+
+    @Value("${api.similarity.checker.url}")
+    public String apiSimilarityCheckerUrl;
 }
