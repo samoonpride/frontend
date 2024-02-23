@@ -19,7 +19,7 @@ public class IssueServiceImpl implements IssueService {
         return issue.getTitle() != null && !issue.getMedia().isEmpty() && issue.getLatitude() != null && issue.getLongitude() != null;
     }
 
-    public TextMessage checkIssueIncomplete(IssueDto issue) {
+    public TextMessage generateIssueIncompleteMessage(IssueDto issue) {
         if (issue.getTitle() == null) {
             log.info("Issue not have title");
             return new TextMessage(TITLE_MISSING_MESSAGE);

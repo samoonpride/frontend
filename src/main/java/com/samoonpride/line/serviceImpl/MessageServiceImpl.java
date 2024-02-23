@@ -28,6 +28,7 @@ public class MessageServiceImpl implements MessageService {
     private final ImageServiceImpl imageService;
     private final VideoServiceImpl videoService;
     private final IssueServiceImpl issueService;
+    private final SimilarityServiceImpl similarityService;
 
     @Override
     public TextMessage handleMessage(UserDto userDto, MessageContent message) throws IOException, ExecutionException, InterruptedException {
@@ -49,12 +50,15 @@ public class MessageServiceImpl implements MessageService {
                 handleLocationMessage(issue, (LocationMessageContent) message);
             }
 
+            // Check if the issue is complete
             if (issueService.isIssueComplete(issue)) {
-                issueListService.sendIssue(issue);
-                log.info("Create issue success");
-                return new TextMessage(ISSUE_SUCCESS_MESSAGE);
+                log.info("Issue is complete");
+                return similarityService.generateSimilarityMessage(issue);
+//                issueListService.sendIssue(issue);
+//                log.info("Create issue success");
+//                return new TextMessage(ISSUE_SUCCESS_MESSAGE);
             } else {
-                return issueService.checkIssueIncomplete(issue);
+                return issueService.generateIssueIncompleteMessage(issue);
             }
 
         } catch (Exception e) {
