@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samoonpride.line.config.ApiConfig;
 import com.samoonpride.line.config.WebClientConfig;
 import com.samoonpride.line.dto.IssueBubbleDto;
-import com.samoonpride.line.dto.IssueDto;
+import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.service.IssueListService;
 import lombok.RequiredArgsConstructor;
@@ -22,46 +22,47 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class IssueListServiceImpl implements IssueListService {
-    private final List<IssueDto> issueDtoList = new ArrayList<>();
+    private final List<CreateIssueRequest> createIssueRequestList = new ArrayList<>();
     private final RestTemplate restTemplate = new RestTemplate();
     private final ApiConfig apiConfig;
     private final WebClientConfig webClientConfig;
     private final ObjectMapper objectMapper;
 
     @Override
-    public void addIssue(IssueDto issueDto) {
-        if (issueDtoList.contains(issueDto)) {
+    public void addIssue(CreateIssueRequest createIssueRequest) {
+        if (createIssueRequestList.contains(createIssueRequest)) {
             return;
         }
-        issueDtoList.add(issueDto);
+        createIssueRequestList.add(createIssueRequest);
     }
 
     @Override
-    public IssueDto findByUserId(UserDto userDto) {
-        return issueDtoList.stream()
+    public CreateIssueRequest findByUserId(UserDto userDto) {
+        return createIssueRequestList.stream()
                 .filter(issueDto -> issueDto.getUser().getUserId().equals(userDto.getUserId()))
                 .findFirst()
                 .orElseGet(() -> {
-                    IssueDto issueDto = new IssueDto(userDto);
-                    this.addIssue(issueDto);
-                    return issueDto;
+                    CreateIssueRequest createIssueRequest = new CreateIssueRequest(userDto);
+                    this.addIssue(createIssueRequest);
+                    return createIssueRequest;
                 });
     }
 
     // send issue to backend and remove from list
     @Override
-    public void sendIssue(IssueDto issueDto) {
+    public void sendIssue(CreateIssueRequest createIssueRequest) {
         URI uri = URI.create(apiConfig.apiBackendUrl + "/issue/create");
         String response = webClientConfig.webClient()
                 .post()
                 .uri(uri)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(issueDto)
+                .bodyValue(createIssueRequest)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
+        log.info("Create issue success");
         log.info("Response: " + response);
-        issueDtoList.remove(issueDto);
+        createIssueRequestList.remove(createIssueRequest);
     }
 
     @Override
@@ -74,6 +75,37 @@ public class IssueListServiceImpl implements IssueListService {
                 .bodyToMono(new ParameterizedTypeReference<List<IssueBubbleDto>>() {
                 })
                 .block();
+        log.info("Latest Issue");
+        log.info("IssueBubbleDtoList: " + issueBubbleDtoList);
+        return issueBubbleDtoList;
+    }
+
+    @Override
+    public List<IssueBubbleDto> getIssuesByDistinctUser(String userId) {
+        URI uri = URI.create(apiConfig.apiBackendUrl + "/issue/line-user/get/" + userId + "/distinct");
+        List<IssueBubbleDto> issueBubbleDtoList = webClientConfig.webClient()
+                .get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<IssueBubbleDto>>() {
+                })
+                .block();
+        log.info("Distinct Issue");
+        log.info("IssueBubbleDtoList: " + issueBubbleDtoList);
+        return issueBubbleDtoList;
+    }
+
+    @Override
+    public List<IssueBubbleDto> getSubscribedIssues(String userId) {
+        URI uri = URI.create(apiConfig.apiBackendUrl + "/issue/line-user/get/" + userId + "/subscribed");
+        List<IssueBubbleDto> issueBubbleDtoList = webClientConfig.webClient()
+                .get()
+                .uri(uri)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<IssueBubbleDto>>() {
+                })
+                .block();
+        log.info("Subscribed Issue");
         log.info("IssueBubbleDtoList: " + issueBubbleDtoList);
         return issueBubbleDtoList;
     }
