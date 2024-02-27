@@ -1,17 +1,21 @@
 package com.samoonpride.line.service;
 
 import com.samoonpride.line.dto.IssueBubbleDto;
-import com.samoonpride.line.dto.IssueDto;
+import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.dto.UserDto;
 
 import java.util.List;
 
 public interface IssueListService {
-    void addIssue(IssueDto issueDto);
+    void addIssue(CreateIssueRequest createIssueRequest);
 
-    IssueDto findByUserId(UserDto userDto);
+    CreateIssueRequest findByUserId(UserDto userDto);
 
-    void sendIssue(IssueDto issueDto);
+    void sendIssue(CreateIssueRequest createIssueRequest);
 
     List<IssueBubbleDto> getLatestIssues(String userId);
+
+    List<IssueBubbleDto> getIssuesByDistinctUser(String userId);
+
+    List<IssueBubbleDto> getSubscribedIssues(String userId);
 }

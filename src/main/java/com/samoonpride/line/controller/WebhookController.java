@@ -11,9 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 @Log4j2
 @RestController
 @LineMessageHandler
@@ -24,11 +21,7 @@ public class WebhookController {
 
     @EventMapping
     public Message handleMessageEvent(MessageEvent event) {
-        try {
-            UserDto userDto = lineUserListService.findLineUser(event.source().userId());
-            return messageService.handleMessage(userDto, event.message());
-        } catch (IOException | ExecutionException | InterruptedException e) {
-            return null;
-        }
+        UserDto userDto = lineUserListService.findLineUser(event.source().userId());
+        return messageService.handleMessage(userDto, event.message());
     }
 }

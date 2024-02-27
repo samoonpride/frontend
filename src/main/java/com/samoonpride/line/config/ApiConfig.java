@@ -11,6 +11,9 @@ public class ApiConfig {
     @Value("${api.voice.to.text.url}")
     public String apiVoiceToTextUrl;
 
-    @Value("${api.similarity.checker.url}")
-    public String apiSimilarityCheckerUrl;
+    @Value("${api.similarity.checker.issues.url}")
+    public String apiSimilarityCheckerIssuesUrl;
+
+    @Value("${api.similarity.checker.sentence.url}")
+    public String apiSimilarityCheckerSentenceUrl;
 }

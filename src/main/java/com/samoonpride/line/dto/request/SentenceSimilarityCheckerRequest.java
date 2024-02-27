@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SimilarityCheckerRequest {
-    private String title;
-    private double latitude;
-    private double longitude;
+public class SentenceSimilarityCheckerRequest {
+    private String sourceSentence;
+    private List<String> sentences;
 }

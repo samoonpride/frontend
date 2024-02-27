@@ -10,14 +10,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Log4j2
 @RequiredArgsConstructor
 @Service
 public class LineUserServiceImpl implements LineUserService {
     private final MessagingApiClient messagingApiClient;
-    private final RestTemplate restTemplate = new RestTemplate();
     private final WebClientConfig webClientConfig;
     private final ApiConfig apiConfig;
 

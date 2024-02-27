@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class IssueBubbleDto {
+    int issueId;
     private String title;
     private String thumbnailPath;
     private IssueStatus status;

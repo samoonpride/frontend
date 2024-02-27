@@ -2,9 +2,9 @@ package com.samoonpride.line.serviceImpl;
 
 import com.linecorp.bot.messaging.model.TextMessage;
 import com.linecorp.bot.webhook.model.*;
-import com.samoonpride.line.dto.IssueDto;
 import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
+import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.service.MessageService;
 import com.samoonpride.line.utils.ThumbnailUtils;
 import lombok.AllArgsConstructor;
@@ -13,16 +13,19 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 @Log4j2
 @AllArgsConstructor
 @Service
 public class MessageServiceImpl implements MessageService {
-    private static final String ISSUE_SUCCESS_MESSAGE = "เสร็จสิ้นการสร้างรายงาน";
-    private static final String ERROR_MESSAGE = "เกิดข้อผิดพลาด";
-
+    private static final String ISSUE_SUCCESS_MESSAGE = "Issue creation successful.";
+    private static final String ERROR_MESSAGE = "An error occurred.";
+    private static final String[] COMMANDS = {"Latest Issue", "Subscribe Issue"};
     private final IssueListServiceImpl issueListService;
     private final VoiceToTextServiceImpl voiceToTextService;
     private final ImageServiceImpl imageService;
@@ -31,93 +34,125 @@ public class MessageServiceImpl implements MessageService {
     private final SimilarityServiceImpl similarityService;
 
     @Override
-    public TextMessage handleMessage(UserDto userDto, MessageContent message) throws IOException, ExecutionException, InterruptedException {
-        log.info("Got message from user: " + userDto.getUserId());
-        IssueDto issue = issueListService.findByUserId(userDto);
+    public TextMessage handleMessage(UserDto userDto, MessageContent message) {
+        log.info("Message received from user: {}", userDto.getUserId());
+        CreateIssueRequest issueRequest = issueListService.findByUserId(userDto);
         try {
             if (message instanceof TextMessageContent) {
-                TextMessage textMessage = handleTextMessage(issue, (TextMessageContent) message);
-                if (textMessage != null) {
-                    return textMessage;
+                Optional<TextMessage> optionalTextMessage = Optional.ofNullable(handleTextMessage(issueRequest, (TextMessageContent) message));
+                if (optionalTextMessage.isPresent()) {
+                    return optionalTextMessage.get();
                 }
             } else if (message instanceof AudioMessageContent) {
-                handleAudioMessage(issue, (AudioMessageContent) message);
+                handleAudioMessage(issueRequest, (AudioMessageContent) message);
             } else if (message instanceof ImageMessageContent) {
-                handleImageMessage(issue, userDto.getUserId(), (ImageMessageContent) message);
+                handleImageMessage(issueRequest, userDto.getUserId(), (ImageMessageContent) message);
             } else if (message instanceof VideoMessageContent) {
-                handleVideoMessage(issue, userDto.getUserId(), (VideoMessageContent) message);
+                handleVideoMessage(issueRequest, userDto.getUserId(), (VideoMessageContent) message);
             } else if (message instanceof LocationMessageContent) {
-                handleLocationMessage(issue, (LocationMessageContent) message);
+                handleLocationMessage(issueRequest, (LocationMessageContent) message);
             }
 
-            // Check if the issue is complete
-            if (issueService.isIssueComplete(issue)) {
-                log.info("Issue is complete");
-                return similarityService.generateSimilarityMessage(issue);
-//                issueListService.sendIssue(issue);
-//                log.info("Create issue success");
-//                return new TextMessage(ISSUE_SUCCESS_MESSAGE);
+            if (issueService.isIssueComplete(issueRequest)) {
+                log.info("Issue is complete.");
+                // Check for similar issues
+                return Optional.ofNullable(similarityService.generateSimilarityIssueMessage(issueRequest))
+                        .orElseGet(() -> {
+                            issueListService.sendIssue(issueRequest);
+                            log.info("Issue creation success.");
+                            return new TextMessage(ISSUE_SUCCESS_MESSAGE);
+                        });
             } else {
-                return issueService.generateIssueIncompleteMessage(issue);
+                return issueService.generateIssueIncompleteMessage(issueRequest);
             }
-
         } catch (Exception e) {
-            log.error("Error: ", e);
+            log.error("Error occurred: ", e);
             return new TextMessage(ERROR_MESSAGE);
         } finally {
-            log.info("Issue : " + issue);
+            log.info("Current issue: {}", issueRequest);
         }
     }
 
-    private TextMessage handleTextMessage(IssueDto issue, TextMessageContent textMessage) {
+    private TextMessage handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
         String text = textMessage.text();
-        if (Objects.equals(text, "ปัญหาล่าสุด")) {
-            return new TextMessage(issueListService.getLatestIssues(issue.getUser().getUserId()).toString());
+        List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, COMMANDS);
+
+        String command = getCommandWithHighestSimilarityScore(similarityScores);
+
+        // If there is a command with a similarity score higher than 0.7, execute the command
+        if (command != null) {
+            switch (command) {
+                case "Latest Issue":
+                    return new TextMessage(issueListService.getLatestIssues(issue.getUser().getUserId()).toString());
+                case "Subscribe Issue":
+                    return new TextMessage(issueListService.getSubscribedIssues(issue.getUser().getUserId()).toString());
+                default:
+                    break;
+            }
         } else {
             issue.setTitle(text);
         }
         return null;
     }
 
-    private void handleAudioMessage(IssueDto issue, AudioMessageContent audioMessage) throws IOException, ExecutionException, InterruptedException {
-        log.info("Got audio message");
-        String text = voiceToTextService.handleAudioMessage(audioMessage);
-        issue.setTitle(text);
+    private void handleAudioMessage(CreateIssueRequest issue, AudioMessageContent audioMessage) {
+        log.info("Audio message received.");
+        try {
+            String text = voiceToTextService.handleAudioMessage(audioMessage);
+            issue.setTitle(text);
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            log.error("Error handling audio message: ", e);
+        }
     }
 
-    private void handleImageMessage(IssueDto issue, String userId, ImageMessageContent imageMessage) throws IOException, ExecutionException, InterruptedException {
-        log.info("Got image message");
-
-        Path imagePath = imageService.createImage(userId, imageMessage.id());
-        MediaDto imageMediaDto = imageService.createImageMediaDto(imagePath.toString(), imageMessage.id());
-        String thumbnailPath = ThumbnailUtils.createThumbnail(imagePath.toFile());
-
-        issue.getMedia().add(imageMediaDto);
-        issue.setThumbnailPath(thumbnailPath);
-
-        log.info("Create image success");
+    private void handleImageMessage(CreateIssueRequest issue, String userId, ImageMessageContent imageMessage) {
+        log.info("Image message received.");
+        try {
+            Path imagePath = imageService.createImage(userId, imageMessage.id());
+            MediaDto imageMediaDto = imageService.createImageMediaDto(imagePath.toString(), imageMessage.id());
+            String thumbnailPath = ThumbnailUtils.createThumbnail(imagePath.toFile());
+            issue.getMedia().add(imageMediaDto);
+            issue.setThumbnailPath(thumbnailPath);
+            log.info("Image creation success.");
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            log.error("Error handling image message: ", e);
+        }
     }
 
-    private void handleVideoMessage(IssueDto issue, String userId, VideoMessageContent videoMessage) throws IOException, ExecutionException, InterruptedException {
-        log.info("Got video message");
-
-        Path videoPath = videoService.createVideo(userId, videoMessage.id());
-        MediaDto videoMediaDto = videoService.createVideoMediaDto(videoPath.toString(), videoMessage.id());
-        String thumbnailPath = ThumbnailUtils.createThumbnail(videoPath.toFile());
-
-        issue.getMedia().add(videoMediaDto);
-        issue.setThumbnailPath(thumbnailPath);
-
-        log.info("Create video success");
+    private void handleVideoMessage(CreateIssueRequest issue, String userId, VideoMessageContent videoMessage) {
+        log.info("Video message received.");
+        try {
+            Path videoPath = videoService.createVideo(userId, videoMessage.id());
+            MediaDto videoMediaDto = videoService.createVideoMediaDto(videoPath.toString(), videoMessage.id());
+            String thumbnailPath = ThumbnailUtils.createThumbnail(videoPath.toFile());
+            issue.getMedia().add(videoMediaDto);
+            issue.setThumbnailPath(thumbnailPath);
+            log.info("Video creation success.");
+        } catch (IOException | ExecutionException | InterruptedException e) {
+            log.error("Error handling video message: ", e);
+        }
     }
 
-    private void handleLocationMessage(IssueDto issue, LocationMessageContent locationMessage) {
-        log.info("Got location message");
+    private void handleLocationMessage(CreateIssueRequest issue, LocationMessageContent locationMessage) {
+        log.info("Location message received.");
         double latitude = locationMessage.latitude();
         double longitude = locationMessage.longitude();
-        log.info("Got latitude: " + latitude + " and longitude: " + longitude);
+        log.info("Latitude: {}, Longitude: {}", latitude, longitude);
         issue.setLatitude(latitude);
         issue.setLongitude(longitude);
-        log.info("Get location success");
+        log.info("Location acquisition success.");
+    }
+
+    private String getCommandWithHighestSimilarityScore(List<Double> similarityScores) {
+        // Find the command with the highest similarity score and more than 0.7
+        OptionalInt maxIndex = IntStream.range(0, similarityScores.size())
+                .filter(i -> similarityScores.get(i) > 0.7)
+                .reduce((i, j) -> similarityScores.get(i) >= similarityScores.get(j) ? i : j);
+
+        // If there is a command with a similarity score higher than 0.7, return the command
+        if (maxIndex.isPresent()) {
+            return COMMANDS[maxIndex.getAsInt()];
+        }
+        return null;
     }
 }
