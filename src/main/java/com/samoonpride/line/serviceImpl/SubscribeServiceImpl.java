@@ -27,4 +27,17 @@ public class SubscribeServiceImpl implements SubscribeService{
                 .subscribe();
         log.info("Subscribe issueId: " + issueId + " to lineUserId: " + lineUserId + " success");
     }
+
+    @Override
+    public void unsubscribe(String lineUserId, String issueId) {
+        log.info("Unsubscribe issueId: " + issueId + " to lineUserId: " + lineUserId);
+        SubscribeRequest request = new SubscribeRequest(lineUserId, issueId);
+        webClientConfig.webClient()
+                .delete()
+                .uri(apiConfig.apiBackendUrl + "/subscribe/line-user/{lineUserId}/unsubscribe/{issueId}", lineUserId, issueId)
+                .retrieve()
+                .bodyToMono(String.class)
+                .subscribe();
+        log.info("Unsubscribe issueId: " + issueId + " to lineUserId: " + lineUserId + " success");
+    }
 }
