@@ -42,9 +42,12 @@ public class VideoServiceImpl implements VideoService {
         byte[] bytes = blobContent.byteStream().readAllBytes();
         Files.write(videoFilePath, bytes);
 
+        // remove public from the path
+        Path path = videoFilePath.subpath(1, videoFilePath.getNameCount());
+
         log.info("Save video success");
 
-        return videoFilePath;
+        return path;
     }
 
     public MediaDto createVideoMediaDto(String path, String eventId) {

@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 public class VoiceToTextServiceImpl implements VoiceToTextService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final MessagingApiBlobClient lineMessagingClient;
-    private final ApiConfig apiConfig;
 
     public String handleAudioMessage(AudioMessageContent event) throws IOException, ExecutionException, InterruptedException {
         System.out.printf("Got audio message %s\n", event.id());
@@ -56,7 +55,7 @@ public class VoiceToTextServiceImpl implements VoiceToTextService {
         // Create RestTemplate and send the file to the Python microservice
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity = new HttpEntity<>(bodyBuilder.build(), headers);
         ResponseEntity<String> responseEntity = restTemplate.exchange(
-                apiConfig.apiVoiceToTextUrl,
+                ApiConfig.getApiVoiceToTextUrl(),
                 HttpMethod.POST,
                 requestEntity,
                 String.class

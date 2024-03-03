@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class IssueSimilarityBubble {
+public class SimilarityBubbleDto {
     private int issueId;
     private Integer duplicateIssueId;
     private float similarityScore;

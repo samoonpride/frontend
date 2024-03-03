@@ -13,7 +13,7 @@ public interface IssueListService {
 
     void sendIssue(CreateIssueRequest createIssueRequest);
 
-    List<IssueBubbleDto> getLatestIssues(String userId);
+    List<IssueBubbleDto> getLatestSelfIssues(String userId);
 
     List<IssueBubbleDto> getIssuesByDistinctUser(String userId);
 

@@ -43,8 +43,11 @@ public class ImageServiceImpl implements ImageService {
         Path imageFilePath = imagePath.resolve(imageFileName);
         Files.write(imageFilePath, bytes);
 
+        // remove public from the path
+        Path path = imageFilePath.subpath(1, imageFilePath.getNameCount());
+
         log.info("Save image success");
-        return imageFilePath;
+        return path;
     }
 
     public MediaDto createImageMediaDto(String path, String eventId) {
