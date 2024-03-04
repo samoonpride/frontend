@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
+import static com.samoonpride.line.enums.MessageCommandEnum.*;
+
 @Log4j2
 @AllArgsConstructor
 @Service
@@ -27,7 +29,6 @@ public class MessageServiceImpl implements MessageService {
     private static final String NO_SUBSCRIBED_ISSUES_MESSAGE = "No subscribed issues.";
     private static final String ISSUE_SUCCESS_MESSAGE = "Issue creation successful.";
     private static final String ERROR_MESSAGE = "An error occurred.";
-    private static final String[] COMMANDS = {"Latest Issue", "Subscribe Issue", "My Issue"};
 
     private final IssueListServiceImpl issueListService;
     private final VoiceToTextServiceImpl voiceToTextService;
@@ -78,8 +79,11 @@ public class MessageServiceImpl implements MessageService {
 
     private List<Message> handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
         String text = textMessage.text();
-        List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, COMMANDS);
-        String command = getCommandWithHighestSimilarityScore(similarityScores);
+        String command = matchCommand(text);
+        if (command == null) {
+            List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, getCommands());
+            command = getCommandWithHighestSimilarityScore(similarityScores);
+        }
         // If there is a command with a similarity score higher than 0.7, execute the command
         if (command != null) {
             log.info("Command: {}", command);
@@ -151,18 +155,18 @@ public class MessageServiceImpl implements MessageService {
 
         // If there is a command with a similarity score higher than 0.7, return the command
         if (maxIndex.isPresent()) {
-            return COMMANDS[maxIndex.getAsInt()];
+            return getCommands().get(maxIndex.getAsInt());
         }
         return null;
     }
 
     private List<IssueBubbleDto> executeCommand(CreateIssueRequest issue, String command) {
         String userId = issue.getUser().getUserId();
-        if (command.equals(COMMANDS[0])) {
+        if (LATEST_ISSUE.getValue().equals(command)) {
             return issueListService.getIssuesByDistinctUser(userId);
-        } else if (command.equals(COMMANDS[1])) {
+        } else if (SUBSCRIBE_ISSUE.getValue().equals(command)) {
             return issueListService.getSubscribedIssues(userId);
-        } else if (command.equals(COMMANDS[2])) {
+        } else if (MY_ISSUE.getValue().equals(command)) {
             return issueListService.getLatestSelfIssues(userId);
         } else {
             return new ArrayList<>();

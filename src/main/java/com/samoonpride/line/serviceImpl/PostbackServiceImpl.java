@@ -12,11 +12,16 @@ import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
+import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
+import static com.samoonpride.line.enums.PostbackActionEnum.*;
+import static com.samoonpride.line.enums.MessageKeys.SUCCESS_MESSAGE_SUBSCRIBED;
+import static com.samoonpride.line.enums.MessageKeys.SUCCESS_MESSAGE_UNSUBSCRIBED;
+import static com.samoonpride.line.enums.MessageKeys.SUCCESS_MESSAGE_CREATED_ISSUE;
+
 @Log4j2
 @AllArgsConstructor
 @Service
 public class PostbackServiceImpl implements PostbackService {
-    private static final String[] POSTBACK_ACTIONS = {"duplicate", "subscribe","noDuplicate", "unsubscribe"};
     private SubscribeServiceImpl subscribeService;
     private IssueListServiceImpl issueListService;
 
@@ -28,15 +33,15 @@ public class PostbackServiceImpl implements PostbackService {
         if (postbackResponse.getAction() == null) {
             log.info("Postback action is null");
             return new TextMessage("Postback action is null");
-        } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[0])) {
+        } else if (DUPLICATE.getValue().equals(postbackResponse.getAction())) {
             return handleDuplicateIssue(userDto, postbackResponse);
-        } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[1])) {
+        } else if (SUBSCRIBE.getValue().equals(postbackResponse.getAction())) {
             log.info("Subscribe issue");
             return handleSubscribeIssue(userDto, postbackResponse);
-        } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[2])) {
+        } else if (NO_DUPLICATE.getValue().equals(postbackResponse.getAction())) {
             log.info("No duplicate issue");
             return handleNoDuplicateIssue(userDto);
-        } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[3])) {
+        } else if (UNSUBSCRIBE.getValue().equals(postbackResponse.getAction())) {
             log.info("Unsubscribe issue");
             return handleUnsubscribeIssue(userDto, postbackResponse);
         }
@@ -50,14 +55,14 @@ public class PostbackServiceImpl implements PostbackService {
         issueListService.sendIssue(issueRequest);
         log.info("Duplicate issue success");
         log.info("Send issue success message");
-        return new TextMessage("duplicate and create issue success");
+        return new TextMessage(getMessage(SUCCESS_MESSAGE_CREATED_ISSUE));
     }
 
     private TextMessage handleSubscribeIssue(UserDto userDto, PostbackResponse postbackResponse) {
         subscribeService.subscribe(userDto.getUserId(), postbackResponse.getIssueId());
         log.info("Subscribe issue success");
         log.info("Send subscribe issue success message");
-        return new TextMessage("subscribe issue success");
+        return new TextMessage(getMessage(SUCCESS_MESSAGE_SUBSCRIBED));
     }
 
     private TextMessage handleNoDuplicateIssue(UserDto userDto) {
@@ -66,7 +71,7 @@ public class PostbackServiceImpl implements PostbackService {
         issueListService.sendIssue(issueRequest);
         log.info("No duplicate issue success");
         log.info("Send issue success message");
-        return new TextMessage("no duplicate issue success");
+        return new TextMessage(getMessage(SUCCESS_MESSAGE_CREATED_ISSUE));
     }
 
     private PostbackResponse mapPostbackContentToPostbackResponse(PostbackContent postbackContent) {
@@ -88,6 +93,6 @@ public class PostbackServiceImpl implements PostbackService {
         subscribeService.unsubscribe(userDto.getUserId(), postbackResponse.getIssueId());
         log.info("Unsubscribe issue success");
         log.info("Send unsubscribe issue success message");
-        return new TextMessage("unsubscribe issue success");
+        return new TextMessage(getMessage(SUCCESS_MESSAGE_UNSUBSCRIBED));
     }
 }

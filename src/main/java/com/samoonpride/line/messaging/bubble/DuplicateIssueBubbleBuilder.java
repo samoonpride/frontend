@@ -4,6 +4,7 @@ import com.linecorp.bot.messaging.model.*;
 import com.samoonpride.line.config.AppConfig;
 import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.SimilarityBubbleDto;
+import com.samoonpride.line.enums.PostbackActionEnum;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
@@ -15,12 +16,11 @@ import java.util.Optional;
 
 import static java.util.Collections.singletonList;
 
+
 @AllArgsConstructor
 @Component
 @Log4j2
 public class DuplicateIssueBubbleBuilder {
-    private static final String DUPLICATE_LABEL = "duplicate";
-
     public static FlexBubble createIssueBubble(SimilarityBubbleDto similarityBubbleDto) {
         log.info("Creating similarity bubble");
         IssueBubbleDto issueBubbleDto = similarityBubbleDto.getIssueBubbleDto();
@@ -72,7 +72,7 @@ public class DuplicateIssueBubbleBuilder {
         log.info("Creating JSON object: " + jsonObject);
 
         log.info("Creating footer block");
-        Action action = new PostbackAction.Builder().label(DUPLICATE_LABEL).data(jsonObject.toString()).build();
+        Action action = new PostbackAction.Builder().label(PostbackActionEnum.DUPLICATE.toString()).data(jsonObject.toString()).build();
         log.info("Subscribe action created: " + action);
 
         FlexButton button = new FlexButton.Builder(action).build();

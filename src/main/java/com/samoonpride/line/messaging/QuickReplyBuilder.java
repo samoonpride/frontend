@@ -6,22 +6,16 @@ import org.json.JSONObject;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class QuickReplyBuilder {
-    private static final String NO_DUPLICATE_ISSUE_LABEL = "ไม่พบปัญหาที่คล้ายคลึงกัน";
-    private static final String MEDIA_MESSAGE = "กรุณาใส่รูปภาพหรือวิดีโอ";
-    private static final String LOCATION_MESSAGE = "กรุณาใส่ตำแหน่งที่อยู่";
-    private static final String CAMERA_LABEL = "ถ่ายรูปหรือวิดีโอ";
-    private static final String LOCATION_LABEL = "ส่งตำแหน่งที่อยู่";
-    private static final String CAMERA_ROLL_LABEL = "เลือกรูปภาพจากแกลเลอรี";
-    private static final String DUPLICATE_ISSUE_MESSAGE = "กรุณาตรวจสอบว่าปัญหาที่คุณรายงานมีความคล้ายคลึงกับปัญหาที่มีอยู่แล้วหรือไม่";
+import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
+import static com.samoonpride.line.enums.MessageKeys.*;
 
+public class QuickReplyBuilder {
     public static TextMessage createNoDuplicateQuickReplyMessage() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("action", "noDuplicate");
-
         Action action = new PostbackAction
                 .Builder()
-                .label(NO_DUPLICATE_ISSUE_LABEL)
+                .label(getMessage(QUICK_REPLY_LABEL_NO_DUPLICATE_ISSUE))
                 .data(jsonObject.toString())
                 .build();
 
@@ -35,7 +29,7 @@ public class QuickReplyBuilder {
                 .items(Collections.singletonList(quickReplyItem))
                 .build();
 
-        return new TextMessage.Builder(DUPLICATE_ISSUE_MESSAGE).quickReply(
+        return new TextMessage.Builder(getMessage(QUICK_REPLY_MESSAGE_DUPLICATE_ISSUE)).quickReply(
                 quickReply
         ).build();
     }
@@ -43,7 +37,7 @@ public class QuickReplyBuilder {
     public static TextMessage createLocationQuickReplyMessage() {
         Action action = new LocationAction
                 .Builder()
-                .label(LOCATION_LABEL)
+                .label(getMessage(QUICK_REPLY_LABEL_LOCATION))
                 .build();
 
         QuickReplyItem quickReplyItem = new QuickReplyItem
@@ -56,7 +50,7 @@ public class QuickReplyBuilder {
                 .items(Collections.singletonList(quickReplyItem))
                 .build();
 
-        return new TextMessage.Builder(LOCATION_MESSAGE).quickReply(
+        return new TextMessage.Builder(getMessage(QUICK_REPLY_MESSAGE_LOCATION)).quickReply(
                 quickReply
         ).build();
     }
@@ -70,7 +64,7 @@ public class QuickReplyBuilder {
                 ))
                 .build();
 
-        return new TextMessage.Builder(MEDIA_MESSAGE).quickReply(
+        return new TextMessage.Builder(getMessage(QUICK_REPLY_MESSAGE_MEDIA)).quickReply(
                 quickReply
         ).build();
     }
@@ -78,7 +72,7 @@ public class QuickReplyBuilder {
     private static QuickReplyItem createCameraQuickReply() {
         Action action = new CameraAction
                 .Builder()
-                .label(CAMERA_LABEL)
+                .label(getMessage(QUICK_REPLY_LABEL_CAMERA))
                 .build();
 
         return new QuickReplyItem
@@ -90,7 +84,7 @@ public class QuickReplyBuilder {
     private static QuickReplyItem createCameraRollQuickReply() {
         Action action = new CameraRollAction
                 .Builder()
-                .label(CAMERA_ROLL_LABEL)
+                .label(getMessage(QUICK_REPLY_LABEL_CAMERA_ROLL))
                 .build();
 
         return new QuickReplyItem

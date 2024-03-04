@@ -69,10 +69,10 @@ public class SimilarityServiceImpl implements SimilarityService {
         return similarityBubbleDtos;
     }
 
-    public List<Double> sendSentenceSimilarityCheckerRequest(String sourceSentence, String[] sentences) {
+    public List<Double> sendSentenceSimilarityCheckerRequest(String sourceSentence, List<String> sentences) {
         SentenceSimilarityCheckerRequest sentenceRequest = new SentenceSimilarityCheckerRequest(
                 sourceSentence,
-                Arrays.asList(sentences)
+                sentences
         );
 
 

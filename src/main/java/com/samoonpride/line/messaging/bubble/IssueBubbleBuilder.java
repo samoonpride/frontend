@@ -3,6 +3,7 @@ package com.samoonpride.line.messaging.bubble;
 import com.linecorp.bot.messaging.model.*;
 import com.samoonpride.line.config.AppConfig;
 import com.samoonpride.line.dto.IssueBubbleDto;
+import com.samoonpride.line.enums.PostbackActionEnum;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONObject;
@@ -18,8 +19,6 @@ import static java.util.Collections.singletonList;
 @Component
 @Log4j2
 public class IssueBubbleBuilder {
-    private static final String SUBSCRIBE_LABEL = "subscribe";
-    private static final String UNSUBSCRIBE_LABEL = "unsubscribe";
 
     public static FlexBubble createIssueBubble(IssueBubbleDto issueBubbleDto) {
         log.info("Creating issue bubble");
@@ -92,8 +91,8 @@ public class IssueBubbleBuilder {
         }
 
         String actionString = isSubscribed
-                .map(subscribed -> subscribed ? UNSUBSCRIBE_LABEL : SUBSCRIBE_LABEL)
-                .orElse(SUBSCRIBE_LABEL);
+                .map(subscribed -> subscribed ? PostbackActionEnum.UNSUBSCRIBE.getValue() : PostbackActionEnum.SUBSCRIBE.getValue())
+                .orElse(PostbackActionEnum.DUPLICATE.getValue());
         jsonObject.put("action", actionString);
         jsonObject.put("issueId", String.valueOf(issueBubbleDto.getIssueId()));
         log.info("Creating json object: " + jsonObject);
