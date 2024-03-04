@@ -32,7 +32,7 @@ public class SimilarityServiceImpl implements SimilarityService {
         }
         return Arrays.asList(
                 DuplicateIssueCarouselBuilder.createIssueCarousel(similarityBubbleDtoList),
-                QuickReplyBuilder.createNoDuplicateQuickReply()
+                QuickReplyBuilder.createNoDuplicateQuickReplyMessage()
         );
     }
 
