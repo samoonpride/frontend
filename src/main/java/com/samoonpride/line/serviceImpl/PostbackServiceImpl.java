@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 @Service
 public class PostbackServiceImpl implements PostbackService {
-    private static final String[] POSTBACK_ACTIONS = {"duplicate", "subscribe","noDuplicate"};
+    private static final String[] POSTBACK_ACTIONS = {"duplicate", "subscribe","noDuplicate", "unsubscribe"};
     private SubscribeServiceImpl subscribeService;
     private IssueListServiceImpl issueListService;
 
@@ -36,6 +36,9 @@ public class PostbackServiceImpl implements PostbackService {
         } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[2])) {
             log.info("No duplicate issue");
             return handleNoDuplicateIssue(userDto);
+        } else if (postbackResponse.getAction().equals(POSTBACK_ACTIONS[3])) {
+            log.info("Unsubscribe issue");
+            return handleUnsubscribeIssue(userDto, postbackResponse);
         }
         return null;
     }
@@ -79,5 +82,12 @@ public class PostbackServiceImpl implements PostbackService {
 
         // Create PostbackResponse object
         return new PostbackResponse(action, null);
+    }
+
+    private TextMessage handleUnsubscribeIssue(UserDto userDto, PostbackResponse postbackResponse) {
+        subscribeService.unsubscribe(userDto.getUserId(), postbackResponse.getIssueId());
+        log.info("Unsubscribe issue success");
+        log.info("Send unsubscribe issue success message");
+        return new TextMessage("unsubscribe issue success");
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Optional;
 
 import static java.util.Collections.singletonList;
 
@@ -17,8 +18,8 @@ import static java.util.Collections.singletonList;
 @Component
 @Log4j2
 public class IssueBubbleBuilder {
-
     private static final String SUBSCRIBE_LABEL = "subscribe";
+    private static final String UNSUBSCRIBE_LABEL = "unsubscribe";
 
     public static FlexBubble createIssueBubble(IssueBubbleDto issueBubbleDto) {
         log.info("Creating issue bubble");
@@ -81,25 +82,29 @@ public class IssueBubbleBuilder {
     private static FlexBox createFooterBlock(IssueBubbleDto issueBubbleDto) {
         // Create json object for postback action
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("action", "subscribe");
-        jsonObject.put("issueId", issueBubbleDto.getIssueId());
+
+        Optional<Boolean> isSubscribed = Optional.ofNullable(issueBubbleDto.getSubscribed());
+        log.info("Is subscribed: " + isSubscribed);
+        // when isSubscribed is null, it means issue is from user's issue list
+        // and is not have footer block
+        if (isSubscribed.isEmpty()) {
+            return null;
+        }
+
+        String actionString = isSubscribed
+                .map(subscribed -> subscribed ? UNSUBSCRIBE_LABEL : SUBSCRIBE_LABEL)
+                .orElse(SUBSCRIBE_LABEL);
+        jsonObject.put("action", actionString);
+        jsonObject.put("issueId", String.valueOf(issueBubbleDto.getIssueId()));
         log.info("Creating json object: " + jsonObject);
 
 
         log.info("Creating footer block");
-        Action action = new PostbackAction
-                .Builder()
-                .label(SUBSCRIBE_LABEL)
-                .data(String.valueOf(issueBubbleDto.getIssueId()))
-                .build();
+        Action action = new PostbackAction.Builder().label(actionString).data(jsonObject.toString()).build();
         log.info("Subscribe action created: " + action);
 
-        FlexButton button = new FlexButton
-                .Builder(action)
-                .build();
+        FlexButton button = new FlexButton.Builder(action).build();
 
-        return new FlexBox
-                .Builder(FlexBox.Layout.HORIZONTAL, Collections.singletonList(button))
-                .build();
+        return new FlexBox.Builder(FlexBox.Layout.HORIZONTAL, Collections.singletonList(button)).build();
     }
 }

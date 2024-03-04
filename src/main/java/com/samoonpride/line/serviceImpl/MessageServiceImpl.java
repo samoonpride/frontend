@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
 @AllArgsConstructor
 @Service
 public class MessageServiceImpl implements MessageService {
+    private static final String NO_SUBSCRIBED_ISSUES_MESSAGE = "No subscribed issues.";
     private static final String ISSUE_SUCCESS_MESSAGE = "Issue creation successful.";
     private static final String ERROR_MESSAGE = "An error occurred.";
     private static final String[] COMMANDS = {"Latest Issue", "Subscribe Issue", "My Issue"};
@@ -41,9 +42,9 @@ public class MessageServiceImpl implements MessageService {
         CreateIssueRequest issueRequest = issueListService.findByUserId(userDto);
         try {
             if (message instanceof TextMessageContent) {
-                Optional<Message> optionalTextMessage = Optional.ofNullable(handleTextMessage(issueRequest, (TextMessageContent) message));
+                Optional<List<Message>> optionalTextMessage = Optional.ofNullable(handleTextMessage(issueRequest, (TextMessageContent) message));
                 if (optionalTextMessage.isPresent()) {
-                    return (List<Message>) optionalTextMessage.get();
+                    return optionalTextMessage.get();
                 }
             } else if (message instanceof AudioMessageContent) {
                 handleAudioMessage(issueRequest, (AudioMessageContent) message);
@@ -75,7 +76,7 @@ public class MessageServiceImpl implements MessageService {
         }
     }
 
-    private Message handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
+    private List<Message> handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
         String text = textMessage.text();
         List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, COMMANDS);
         String command = getCommandWithHighestSimilarityScore(similarityScores);
@@ -83,8 +84,10 @@ public class MessageServiceImpl implements MessageService {
         if (command != null) {
             log.info("Command: {}", command);
             List<IssueBubbleDto> issueBubbleDtoList = executeCommand(issue, command);
-            assert issueBubbleDtoList != null;
-            return IssueCarouselBuilder.createIssueCarousel(issueBubbleDtoList);
+            if (issueBubbleDtoList.isEmpty()) {
+                return Collections.singletonList(new TextMessage(NO_SUBSCRIBED_ISSUES_MESSAGE));
+            }
+            return Collections.singletonList(IssueCarouselBuilder.createIssueCarousel(issueBubbleDtoList));
         } else {
             issue.setTitle(text);
         }
