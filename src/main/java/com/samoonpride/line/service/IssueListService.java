@@ -9,6 +9,8 @@ import java.util.List;
 public interface IssueListService {
     void addIssue(CreateIssueRequest createIssueRequest);
 
+    boolean removeIssue(CreateIssueRequest createIssueRequest);
+
     CreateIssueRequest findByUserId(UserDto userDto);
 
     void sendIssue(CreateIssueRequest createIssueRequest);

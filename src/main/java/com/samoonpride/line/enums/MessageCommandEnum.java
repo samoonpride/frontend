@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 public enum MessageCommandEnum {
     LATEST_ISSUE("Latest Issue"),
     SUBSCRIBE_ISSUE("Subscribe Issue"),
-    MY_ISSUE("My Issue");
+    MY_ISSUE("My Issue"),
+    CANCEL("Cancel");
 
     private final String value;
 
