@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 import java.util.Locale;
+import java.util.Objects;
 
 @Configuration
 public class MessageSourceConfig {
@@ -25,5 +26,9 @@ public class MessageSourceConfig {
 
     public static String getMessage(MessageKeys messageKeys) {
         return messageSource.getMessage(messageKeys.getKey(), null, Locale.ENGLISH);
+    }
+
+    public static String getMessage(MessageKeys messageKeys, Object[] args) {
+        return messageSource.getMessage(messageKeys.getKey(), args, Locale.ENGLISH);
     }
 }

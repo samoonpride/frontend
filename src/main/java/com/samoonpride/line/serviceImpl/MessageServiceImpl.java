@@ -50,9 +50,9 @@ public class MessageServiceImpl implements MessageService {
             } else if (message instanceof AudioMessageContent) {
                 handleAudioMessage(issueRequest, (AudioMessageContent) message);
             } else if (message instanceof ImageMessageContent) {
-                handleImageMessage(issueRequest, userDto.getUserId(), (ImageMessageContent) message);
+                handleImageMessage(issueRequest, (ImageMessageContent) message);
             } else if (message instanceof VideoMessageContent) {
-                handleVideoMessage(issueRequest, userDto.getUserId(), (VideoMessageContent) message);
+                handleVideoMessage(issueRequest, (VideoMessageContent) message);
             } else if (message instanceof LocationMessageContent) {
                 handleLocationMessage(issueRequest, (LocationMessageContent) message);
             }
@@ -108,10 +108,10 @@ public class MessageServiceImpl implements MessageService {
         }
     }
 
-    private void handleImageMessage(CreateIssueRequest issue, String userId, ImageMessageContent imageMessage) {
+    private void handleImageMessage(CreateIssueRequest issue, ImageMessageContent imageMessage) {
         log.info("Image message received.");
         try {
-            Path imagePath = imageService.createImage(userId, imageMessage.id());
+            Path imagePath = imageService.createImage(issue.getUser().getUserId(), imageMessage.id());
             MediaDto imageMediaDto = imageService.createImageMediaDto(imagePath.toString(), imageMessage.id());
             // Add public to the path
             Path publicPath = Path.of("public").resolve(imagePath);
@@ -124,10 +124,10 @@ public class MessageServiceImpl implements MessageService {
         }
     }
 
-    private void handleVideoMessage(CreateIssueRequest issue, String userId, VideoMessageContent videoMessage) {
+    private void handleVideoMessage(CreateIssueRequest issue, VideoMessageContent videoMessage) {
         log.info("Video message received.");
         try {
-            Path videoPath = videoService.createVideo(userId, videoMessage.id());
+            Path videoPath = videoService.createVideo(issue.getUser().getUserId(), videoMessage.id());
             MediaDto videoMediaDto = videoService.createVideoMediaDto(videoPath.toString(), videoMessage.id());
             Path publicPath = Path.of("public").resolve(videoPath);
             String thumbnailPath = ThumbnailUtils.createThumbnail(publicPath.toFile());
