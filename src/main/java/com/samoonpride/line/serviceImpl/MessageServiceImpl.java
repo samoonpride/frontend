@@ -1,10 +1,13 @@
 package com.samoonpride.line.serviceImpl;
 
+import com.linecorp.bot.messaging.model.Message;
 import com.linecorp.bot.messaging.model.TextMessage;
 import com.linecorp.bot.webhook.model.*;
+import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
+import com.samoonpride.line.messaging.carousel.IssueCarouselBuilder;
 import com.samoonpride.line.service.MessageService;
 import com.samoonpride.line.utils.ThumbnailUtils;
 import lombok.AllArgsConstructor;
@@ -13,19 +16,20 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
+
+import static com.samoonpride.line.enums.MessageCommandEnum.*;
 
 @Log4j2
 @AllArgsConstructor
 @Service
 public class MessageServiceImpl implements MessageService {
+    private static final String NO_SUBSCRIBED_ISSUES_MESSAGE = "No subscribed issues.";
     private static final String ISSUE_SUCCESS_MESSAGE = "Issue creation successful.";
     private static final String ERROR_MESSAGE = "An error occurred.";
-    private static final String[] COMMANDS = {"Latest Issue", "Subscribe Issue"};
+
     private final IssueListServiceImpl issueListService;
     private final VoiceToTextServiceImpl voiceToTextService;
     private final ImageServiceImpl imageService;
@@ -34,21 +38,21 @@ public class MessageServiceImpl implements MessageService {
     private final SimilarityServiceImpl similarityService;
 
     @Override
-    public TextMessage handleMessage(UserDto userDto, MessageContent message) {
+    public List<Message> handleMessage(UserDto userDto, MessageContent message) {
         log.info("Message received from user: {}", userDto.getUserId());
         CreateIssueRequest issueRequest = issueListService.findByUserId(userDto);
         try {
             if (message instanceof TextMessageContent) {
-                Optional<TextMessage> optionalTextMessage = Optional.ofNullable(handleTextMessage(issueRequest, (TextMessageContent) message));
+                Optional<List<Message>> optionalTextMessage = Optional.ofNullable(handleTextMessage(issueRequest, (TextMessageContent) message));
                 if (optionalTextMessage.isPresent()) {
                     return optionalTextMessage.get();
                 }
             } else if (message instanceof AudioMessageContent) {
                 handleAudioMessage(issueRequest, (AudioMessageContent) message);
             } else if (message instanceof ImageMessageContent) {
-                handleImageMessage(issueRequest, userDto.getUserId(), (ImageMessageContent) message);
+                handleImageMessage(issueRequest, (ImageMessageContent) message);
             } else if (message instanceof VideoMessageContent) {
-                handleVideoMessage(issueRequest, userDto.getUserId(), (VideoMessageContent) message);
+                handleVideoMessage(issueRequest, (VideoMessageContent) message);
             } else if (message instanceof LocationMessageContent) {
                 handleLocationMessage(issueRequest, (LocationMessageContent) message);
             }
@@ -60,35 +64,34 @@ public class MessageServiceImpl implements MessageService {
                         .orElseGet(() -> {
                             issueListService.sendIssue(issueRequest);
                             log.info("Issue creation success.");
-                            return new TextMessage(ISSUE_SUCCESS_MESSAGE);
+                            return Collections.singletonList(new TextMessage(ISSUE_SUCCESS_MESSAGE));
                         });
             } else {
-                return issueService.generateIssueIncompleteMessage(issueRequest);
+                return Collections.singletonList(issueService.generateIssueIncompleteMessage(issueRequest));
             }
         } catch (Exception e) {
             log.error("Error occurred: ", e);
-            return new TextMessage(ERROR_MESSAGE);
+            return Collections.singletonList(new TextMessage(ERROR_MESSAGE));
         } finally {
             log.info("Current issue: {}", issueRequest);
         }
     }
 
-    private TextMessage handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
+    private List<Message> handleTextMessage(CreateIssueRequest issue, TextMessageContent textMessage) {
         String text = textMessage.text();
-        List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, COMMANDS);
-
-        String command = getCommandWithHighestSimilarityScore(similarityScores);
-
+        String command = matchCommand(text);
+        if (command == null) {
+            List<Double> similarityScores = similarityService.sendSentenceSimilarityCheckerRequest(text, getCommands());
+            command = getCommandWithHighestSimilarityScore(similarityScores);
+        }
         // If there is a command with a similarity score higher than 0.7, execute the command
         if (command != null) {
-            switch (command) {
-                case "Latest Issue":
-                    return new TextMessage(issueListService.getLatestIssues(issue.getUser().getUserId()).toString());
-                case "Subscribe Issue":
-                    return new TextMessage(issueListService.getSubscribedIssues(issue.getUser().getUserId()).toString());
-                default:
-                    break;
+            log.info("Command: {}", command);
+            List<IssueBubbleDto> issueBubbleDtoList = executeCommand(issue, command);
+            if (issueBubbleDtoList.isEmpty()) {
+                return Collections.singletonList(new TextMessage(NO_SUBSCRIBED_ISSUES_MESSAGE));
             }
+            return Collections.singletonList(IssueCarouselBuilder.createIssueCarousel(issueBubbleDtoList));
         } else {
             issue.setTitle(text);
         }
@@ -105,12 +108,14 @@ public class MessageServiceImpl implements MessageService {
         }
     }
 
-    private void handleImageMessage(CreateIssueRequest issue, String userId, ImageMessageContent imageMessage) {
+    private void handleImageMessage(CreateIssueRequest issue, ImageMessageContent imageMessage) {
         log.info("Image message received.");
         try {
-            Path imagePath = imageService.createImage(userId, imageMessage.id());
+            Path imagePath = imageService.createImage(issue.getUser().getUserId(), imageMessage.id());
             MediaDto imageMediaDto = imageService.createImageMediaDto(imagePath.toString(), imageMessage.id());
-            String thumbnailPath = ThumbnailUtils.createThumbnail(imagePath.toFile());
+            // Add public to the path
+            Path publicPath = Path.of("public").resolve(imagePath);
+            String thumbnailPath = ThumbnailUtils.createThumbnail(publicPath.toFile());
             issue.getMedia().add(imageMediaDto);
             issue.setThumbnailPath(thumbnailPath);
             log.info("Image creation success.");
@@ -119,12 +124,13 @@ public class MessageServiceImpl implements MessageService {
         }
     }
 
-    private void handleVideoMessage(CreateIssueRequest issue, String userId, VideoMessageContent videoMessage) {
+    private void handleVideoMessage(CreateIssueRequest issue, VideoMessageContent videoMessage) {
         log.info("Video message received.");
         try {
-            Path videoPath = videoService.createVideo(userId, videoMessage.id());
+            Path videoPath = videoService.createVideo(issue.getUser().getUserId(), videoMessage.id());
             MediaDto videoMediaDto = videoService.createVideoMediaDto(videoPath.toString(), videoMessage.id());
-            String thumbnailPath = ThumbnailUtils.createThumbnail(videoPath.toFile());
+            Path publicPath = Path.of("public").resolve(videoPath);
+            String thumbnailPath = ThumbnailUtils.createThumbnail(publicPath.toFile());
             issue.getMedia().add(videoMediaDto);
             issue.setThumbnailPath(thumbnailPath);
             log.info("Video creation success.");
@@ -145,14 +151,25 @@ public class MessageServiceImpl implements MessageService {
 
     private String getCommandWithHighestSimilarityScore(List<Double> similarityScores) {
         // Find the command with the highest similarity score and more than 0.7
-        OptionalInt maxIndex = IntStream.range(0, similarityScores.size())
-                .filter(i -> similarityScores.get(i) > 0.7)
-                .reduce((i, j) -> similarityScores.get(i) >= similarityScores.get(j) ? i : j);
+        OptionalInt maxIndex = IntStream.range(0, similarityScores.size()).filter(i -> similarityScores.get(i) > 0.7).reduce((i, j) -> similarityScores.get(i) >= similarityScores.get(j) ? i : j);
 
         // If there is a command with a similarity score higher than 0.7, return the command
         if (maxIndex.isPresent()) {
-            return COMMANDS[maxIndex.getAsInt()];
+            return getCommands().get(maxIndex.getAsInt());
         }
         return null;
+    }
+
+    private List<IssueBubbleDto> executeCommand(CreateIssueRequest issue, String command) {
+        String userId = issue.getUser().getUserId();
+        if (LATEST_ISSUE.getValue().equals(command)) {
+            return issueListService.getIssuesByDistinctUser(userId);
+        } else if (SUBSCRIBE_ISSUE.getValue().equals(command)) {
+            return issueListService.getSubscribedIssues(userId);
+        } else if (MY_ISSUE.getValue().equals(command)) {
+            return issueListService.getLatestSelfIssues(userId);
+        } else {
+            return new ArrayList<>();
+        }
     }
 }

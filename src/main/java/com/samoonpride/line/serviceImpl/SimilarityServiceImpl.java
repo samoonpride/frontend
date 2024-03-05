@@ -1,11 +1,13 @@
 package com.samoonpride.line.serviceImpl;
 
-import com.linecorp.bot.messaging.model.TextMessage;
+import com.linecorp.bot.messaging.model.Message;
 import com.samoonpride.line.config.ApiConfig;
-import com.samoonpride.line.dto.IssueSimilarityBubble;
+import com.samoonpride.line.dto.SimilarityBubbleDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.dto.request.IssueSimilarityCheckerRequest;
 import com.samoonpride.line.dto.request.SentenceSimilarityCheckerRequest;
+import com.samoonpride.line.messaging.QuickReplyBuilder;
+import com.samoonpride.line.messaging.carousel.DuplicateIssueCarouselBuilder;
 import com.samoonpride.line.service.SimilarityService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -16,26 +18,25 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @Log4j2
 @AllArgsConstructor
 public class SimilarityServiceImpl implements SimilarityService {
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ApiConfig apiConfig;
 
-    public TextMessage generateSimilarityIssueMessage(CreateIssueRequest issue) {
-        List<IssueSimilarityBubble> issueSimilarityBubbles = sendIssueSimilarityCheckerRequest(issue);
-        if (issueSimilarityBubbles.isEmpty()) {
+    public List<Message> generateSimilarityIssueMessage(CreateIssueRequest issue) {
+        List<SimilarityBubbleDto> similarityBubbleDtoList = sendIssueSimilarityCheckerRequest(issue);
+        if (similarityBubbleDtoList.isEmpty()) {
             return null;
         }
-        return new TextMessage(issueSimilarityBubbles.toString());
+        return Arrays.asList(
+                DuplicateIssueCarouselBuilder.createIssueCarousel(similarityBubbleDtoList),
+                QuickReplyBuilder.createNoDuplicateQuickReplyMessage()
+        );
     }
 
-    private List<IssueSimilarityBubble> sendIssueSimilarityCheckerRequest(CreateIssueRequest issue) {
+    private List<SimilarityBubbleDto> sendIssueSimilarityCheckerRequest(CreateIssueRequest issue) {
         IssueSimilarityCheckerRequest issueSimilarityCheckerRequest = new IssueSimilarityCheckerRequest(
                 issue.getTitle(),
                 issue.getLatitude(),
@@ -49,8 +50,8 @@ public class SimilarityServiceImpl implements SimilarityService {
         // Create RestTemplate and send the file to the Python microservice
         HttpEntity<IssueSimilarityCheckerRequest> requestEntity = new HttpEntity<>(issueSimilarityCheckerRequest, headers);
         log.info("Send similarity check request: " + requestEntity);
-        ResponseEntity<List<IssueSimilarityBubble>> response = restTemplate.exchange(
-                apiConfig.apiSimilarityCheckerIssuesUrl,
+        ResponseEntity<List<SimilarityBubbleDto>> response = restTemplate.exchange(
+                ApiConfig.getApiSimilarityCheckerIssueUrl(),
                 HttpMethod.POST,
                 requestEntity,
                 new ParameterizedTypeReference<>() {
@@ -63,15 +64,15 @@ public class SimilarityServiceImpl implements SimilarityService {
             return List.of();
         }
 
-        List<IssueSimilarityBubble> issueSimilarityBubbles = response.getBody();
-        log.info("Similarity check result: " + issueSimilarityBubbles);
-        return issueSimilarityBubbles;
+        List<SimilarityBubbleDto> similarityBubbleDtos = response.getBody();
+        log.info("Similarity check result: " + similarityBubbleDtos);
+        return similarityBubbleDtos;
     }
 
-    public List<Double> sendSentenceSimilarityCheckerRequest(String sourceSentence, String[] sentences) {
+    public List<Double> sendSentenceSimilarityCheckerRequest(String sourceSentence, List<String> sentences) {
         SentenceSimilarityCheckerRequest sentenceRequest = new SentenceSimilarityCheckerRequest(
                 sourceSentence,
-                Arrays.asList(sentences)
+                sentences
         );
 
 
@@ -83,7 +84,7 @@ public class SimilarityServiceImpl implements SimilarityService {
         HttpEntity<SentenceSimilarityCheckerRequest> requestEntity = new HttpEntity<>(sentenceRequest, headers);
         log.info("Send similarity check request: " + requestEntity);
         ResponseEntity<List<Double>> response = restTemplate.exchange(
-                apiConfig.apiSimilarityCheckerSentenceUrl,
+                ApiConfig.getApiSimilarityCheckerSentenceUrl(),
                 HttpMethod.POST,
                 requestEntity,
                 new ParameterizedTypeReference<>() {

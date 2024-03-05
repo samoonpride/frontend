@@ -37,3 +37,4 @@ build/
 
 # properties files
 application-prod.properties
+application.properties

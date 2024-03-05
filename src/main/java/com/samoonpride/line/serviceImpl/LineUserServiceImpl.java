@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 public class LineUserServiceImpl implements LineUserService {
     private final MessagingApiClient messagingApiClient;
     private final WebClientConfig webClientConfig;
-    private final ApiConfig apiConfig;
 
     @Override
     public UserDto createLineUser(String userId) {
@@ -28,7 +27,7 @@ public class LineUserServiceImpl implements LineUserService {
             );
             webClientConfig.webClient()
                     .post()
-                    .uri(apiConfig.apiBackendUrl + "/line-user/create")
+                    .uri(ApiConfig.getApiBackendUrl() + "/line-user/create")
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(request)
                     .retrieve()

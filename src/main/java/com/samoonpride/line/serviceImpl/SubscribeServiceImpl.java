@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class SubscribeServiceImpl implements SubscribeService{
-    private final ApiConfig apiConfig;
     private final WebClientConfig webClientConfig;
     @Override
     public void subscribe(String lineUserId, String issueId) {
@@ -20,7 +19,7 @@ public class SubscribeServiceImpl implements SubscribeService{
         SubscribeRequest request = new SubscribeRequest(lineUserId, issueId);
         webClientConfig.webClient()
                 .post()
-                .uri(apiConfig.apiBackendUrl + "/subscribe/line-user/subscribe")
+                .uri(ApiConfig.getApiBackendUrl() + "/subscribe/line-user/subscribe")
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
@@ -34,7 +33,7 @@ public class SubscribeServiceImpl implements SubscribeService{
         SubscribeRequest request = new SubscribeRequest(lineUserId, issueId);
         webClientConfig.webClient()
                 .delete()
-                .uri(apiConfig.apiBackendUrl + "/subscribe/line-user/{lineUserId}/unsubscribe/{issueId}", lineUserId, issueId)
+                .uri(ApiConfig.getApiBackendUrl() + "/subscribe/line-user/{lineUserId}/unsubscribe/{issueId}", lineUserId, issueId)
                 .retrieve()
                 .bodyToMono(String.class)
                 .subscribe();
