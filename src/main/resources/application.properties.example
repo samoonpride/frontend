@@ -1,13 +1,16 @@
 spring.application.name=samoonpride
+app.url=
 server.port=8081
-
 # Config
-api.backend.url=http://api-backend:8080/api
-api.voice.to.text.url=http://voice-to-text:8001/voice-to-text
-
+api.backend.url=
+api.voice.to.text.url=
+api.similarity.checker.issue.url=
+api.similarity.checker.sentence.url=
+# Thumbnail
+thumbnail.width=640
+thumbnail.height=480
 # Hot reload
 spring.devtools.restart.enabled=true
-
 # Line
 line.bot.channel-secret=
 line.bot.channel-token=
