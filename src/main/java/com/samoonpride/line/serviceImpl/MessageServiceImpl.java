@@ -7,13 +7,11 @@ import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.service.MessageService;
-import com.samoonpride.line.utils.ThumbnailUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -36,8 +34,6 @@ public class MessageServiceImpl implements MessageService {
 
     private final IssueListServiceImpl issueListService;
     private final VoiceToTextServiceImpl voiceToTextService;
-    private final ImageServiceImpl imageService;
-    private final VideoServiceImpl videoService;
     private final IssueServiceImpl issueService;
     private final SimilarityServiceImpl similarityService;
 
@@ -110,33 +106,16 @@ public class MessageServiceImpl implements MessageService {
 
     private void handleImageMessage(CreateIssueRequest issue, ImageMessageContent imageMessage) {
         log.info("Image message received.");
-        try {
-            Path imagePath = imageService.createImage(issue.getUser().getUserId(), imageMessage.id());
-            MediaDto imageMediaDto = imageService.createImageMediaDto(imagePath.toString(), imageMessage.id());
-            // Add public to the path
-            Path publicPath = Path.of("public").resolve(imagePath);
-            String thumbnailPath = ThumbnailUtils.createThumbnail(publicPath.toFile());
-            issue.getMedia().add(imageMediaDto);
-            issue.setThumbnailPath(thumbnailPath);
-            log.info("Image creation success.");
-        } catch (IOException | ExecutionException | InterruptedException e) {
-            log.error("Error handling image message: ", e);
-        }
+        MediaDto imageMediaDto = new MediaDto("IMAGE", imageMessage.id());
+        issue.getMedia().add(imageMediaDto);
+        log.info("Set image media success.");
     }
 
     private void handleVideoMessage(CreateIssueRequest issue, VideoMessageContent videoMessage) {
         log.info("Video message received.");
-        try {
-            Path videoPath = videoService.createVideo(issue.getUser().getUserId(), videoMessage.id());
-            MediaDto videoMediaDto = videoService.createVideoMediaDto(videoPath.toString(), videoMessage.id());
-            Path publicPath = Path.of("public").resolve(videoPath);
-            String thumbnailPath = ThumbnailUtils.createThumbnail(publicPath.toFile());
-            issue.getMedia().add(videoMediaDto);
-            issue.setThumbnailPath(thumbnailPath);
-            log.info("Video creation success.");
-        } catch (IOException | ExecutionException | InterruptedException e) {
-            log.error("Error handling video message: ", e);
-        }
+        MediaDto videoMediaDto = new MediaDto("VIDEO", videoMessage.id());
+        issue.getMedia().add(videoMediaDto);
+        log.info("Set video media success.");
     }
 
     private void handleLocationMessage(CreateIssueRequest issue, LocationMessageContent locationMessage) {

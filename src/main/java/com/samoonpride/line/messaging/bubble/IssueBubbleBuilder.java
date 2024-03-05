@@ -65,7 +65,7 @@ public class IssueBubbleBuilder {
     private static FlexImage createHeroBlock(IssueBubbleDto issueBubbleDto) {
         log.info("Creating hero block");
         try {
-            URI uri = new URI(AppConfig.getAppUrl() + "/" + issueBubbleDto.getThumbnailPath());
+            URI uri = new URI(AppConfig.getBackendUrl() + "/" + issueBubbleDto.getThumbnailPath());
             return new FlexImage
                     .Builder(uri)
                     .size("full")
