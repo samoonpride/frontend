@@ -32,6 +32,11 @@ public class IssueListServiceImpl implements IssueListService {
     }
 
     @Override
+    public boolean removeIssue(CreateIssueRequest createIssueRequest) {
+        return createIssueRequestList.remove(createIssueRequest);
+    }
+
+    @Override
     public CreateIssueRequest findByUserId(UserDto userDto) {
         return createIssueRequestList.stream()
                 .filter(issueDto -> issueDto.getUser().getUserId().equals(userDto.getUserId()))

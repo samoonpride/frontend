@@ -20,7 +20,9 @@ public enum MessageKeys {
     //# success messages
     SUCCESS_MESSAGE_SUBSCRIBED("success.message.subscribed"),
     SUCCESS_MESSAGE_UNSUBSCRIBED("success.message.unsubscribed"),
-    SUCCESS_MESSAGE_CREATED_ISSUE("success.message.created.issue");
+    SUCCESS_MESSAGE_CREATED_ISSUE("success.message.created.issue"),
+    //# create issue messages
+    CREATE_ISSUE_MESSAGE_CANCEL("create.issue.message.cancel");
 
     private final String key;
 }

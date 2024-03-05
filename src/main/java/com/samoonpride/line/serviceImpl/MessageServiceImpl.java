@@ -3,11 +3,9 @@ package com.samoonpride.line.serviceImpl;
 import com.linecorp.bot.messaging.model.Message;
 import com.linecorp.bot.messaging.model.TextMessage;
 import com.linecorp.bot.webhook.model.*;
-import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
-import com.samoonpride.line.messaging.carousel.IssueCarouselBuilder;
 import com.samoonpride.line.service.MessageService;
 import com.samoonpride.line.utils.ThumbnailUtils;
 import lombok.AllArgsConstructor;
@@ -16,11 +14,17 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
+import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
 import static com.samoonpride.line.enums.MessageCommandEnum.*;
+import static com.samoonpride.line.enums.MessageKeys.CREATE_ISSUE_MESSAGE_CANCEL;
+import static com.samoonpride.line.messaging.carousel.IssueCarouselBuilder.createIssueCarousel;
+import static java.util.Collections.singletonList;
 
 @Log4j2
 @AllArgsConstructor
@@ -64,14 +68,14 @@ public class MessageServiceImpl implements MessageService {
                         .orElseGet(() -> {
                             issueListService.sendIssue(issueRequest);
                             log.info("Issue creation success.");
-                            return Collections.singletonList(new TextMessage(ISSUE_SUCCESS_MESSAGE));
+                            return singletonList(new TextMessage(ISSUE_SUCCESS_MESSAGE));
                         });
             } else {
-                return Collections.singletonList(issueService.generateIssueIncompleteMessage(issueRequest));
+                return singletonList(issueService.generateIssueIncompleteMessage(issueRequest));
             }
         } catch (Exception e) {
             log.error("Error occurred: ", e);
-            return Collections.singletonList(new TextMessage(ERROR_MESSAGE));
+            return singletonList(new TextMessage(ERROR_MESSAGE));
         } finally {
             log.info("Current issue: {}", issueRequest);
         }
@@ -87,11 +91,7 @@ public class MessageServiceImpl implements MessageService {
         // If there is a command with a similarity score higher than 0.7, execute the command
         if (command != null) {
             log.info("Command: {}", command);
-            List<IssueBubbleDto> issueBubbleDtoList = executeCommand(issue, command);
-            if (issueBubbleDtoList.isEmpty()) {
-                return Collections.singletonList(new TextMessage(NO_SUBSCRIBED_ISSUES_MESSAGE));
-            }
-            return Collections.singletonList(IssueCarouselBuilder.createIssueCarousel(issueBubbleDtoList));
+            return executeCommand(issue, command);
         } else {
             issue.setTitle(text);
         }
@@ -160,16 +160,19 @@ public class MessageServiceImpl implements MessageService {
         return null;
     }
 
-    private List<IssueBubbleDto> executeCommand(CreateIssueRequest issue, String command) {
+    private List<Message> executeCommand(CreateIssueRequest issue, String command) {
         String userId = issue.getUser().getUserId();
         if (LATEST_ISSUE.getValue().equals(command)) {
-            return issueListService.getIssuesByDistinctUser(userId);
+            return singletonList(createIssueCarousel(issueListService.getIssuesByDistinctUser(userId)));
         } else if (SUBSCRIBE_ISSUE.getValue().equals(command)) {
-            return issueListService.getSubscribedIssues(userId);
+            return singletonList(createIssueCarousel(issueListService.getSubscribedIssues(userId)));
         } else if (MY_ISSUE.getValue().equals(command)) {
-            return issueListService.getLatestSelfIssues(userId);
+            return singletonList(createIssueCarousel(issueListService.getLatestSelfIssues(userId)));
+        } else if (CANCEL.getValue().equals(command)) {
+            issueListService.removeIssue(issue);
+            return singletonList(new TextMessage(getMessage(CREATE_ISSUE_MESSAGE_CANCEL)));
         } else {
-            return new ArrayList<>();
+            return singletonList(new TextMessage(NO_SUBSCRIBED_ISSUES_MESSAGE));
         }
     }
 }
