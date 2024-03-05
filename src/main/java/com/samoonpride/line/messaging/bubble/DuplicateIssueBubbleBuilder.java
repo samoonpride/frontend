@@ -55,7 +55,7 @@ public class DuplicateIssueBubbleBuilder {
     private static FlexImage createHeroBlock(IssueBubbleDto issueBubbleDto) {
         log.info("Creating hero block");
         try {
-            URI uri = new URI(AppConfig.getAppUrl() + "/" + issueBubbleDto.getThumbnailPath());
+            URI uri = new URI(AppConfig.getBackendUrl() + "/" + issueBubbleDto.getThumbnailPath());
             return new FlexImage.Builder(uri).size("full").aspectRatio("1.5:1").aspectMode(FlexImage.AspectMode.FIT).build();
         } catch (Exception e) {
             log.error("Error creating hero block: " + e.getMessage());

@@ -1,5 +1,6 @@
 spring.application.name=samoonpride
 app.url=
+backend.url=
 server.port=8081
 # Config
 api.backend.url=
