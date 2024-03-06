@@ -3,6 +3,7 @@ package com.samoonpride.line.serviceImpl;
 import com.linecorp.bot.messaging.model.Message;
 import com.linecorp.bot.messaging.model.TextMessage;
 import com.linecorp.bot.webhook.model.*;
+import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
@@ -21,6 +22,7 @@ import java.util.stream.IntStream;
 import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
 import static com.samoonpride.line.enums.MessageCommandEnum.*;
 import static com.samoonpride.line.enums.MessageKeys.CREATE_ISSUE_MESSAGE_CANCEL;
+import static com.samoonpride.line.enums.MessageKeys.MESSAGE_ISSUE_NOT_FOUND;
 import static com.samoonpride.line.messaging.carousel.IssueCarouselBuilder.createIssueCarousel;
 import static java.util.Collections.singletonList;
 
@@ -142,16 +144,24 @@ public class MessageServiceImpl implements MessageService {
     private List<Message> executeCommand(CreateIssueRequest issue, String command) {
         String userId = issue.getUser().getUserId();
         if (LATEST_ISSUE.getValue().equals(command)) {
-            return singletonList(createIssueCarousel(issueListService.getIssuesByDistinctUser(userId)));
+            return singletonList(generateIssueCarousel(issueListService.getIssuesByDistinctUser(userId)));
         } else if (SUBSCRIBE_ISSUE.getValue().equals(command)) {
-            return singletonList(createIssueCarousel(issueListService.getSubscribedIssues(userId)));
+            return singletonList(generateIssueCarousel(issueListService.getSubscribedIssues(userId)));
         } else if (MY_ISSUE.getValue().equals(command)) {
-            return singletonList(createIssueCarousel(issueListService.getLatestSelfIssues(userId)));
+            return singletonList(generateIssueCarousel(issueListService.getLatestSelfIssues(userId)));
         } else if (CANCEL.getValue().equals(command)) {
             issueListService.removeIssue(issue);
             return singletonList(new TextMessage(getMessage(CREATE_ISSUE_MESSAGE_CANCEL)));
         } else {
             return singletonList(new TextMessage(NO_SUBSCRIBED_ISSUES_MESSAGE));
+        }
+    }
+
+    private Message generateIssueCarousel(List<IssueBubbleDto> issues) {
+        if (issues.isEmpty()) {
+            return new TextMessage(getMessage(MESSAGE_ISSUE_NOT_FOUND));
+        } else {
+            return createIssueCarousel(issues);
         }
     }
 }

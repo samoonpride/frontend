@@ -17,6 +17,7 @@ public enum MessageKeys {
     QUICK_REPLY_MESSAGE_LOCATION("quick.reply.message.location"),
     //# normal messages
     MESSAGE_TITLE_MISSING("message.title.missing"),
+    MESSAGE_ISSUE_NOT_FOUND("message.issue.not.found"),
     //# success messages
     SUCCESS_MESSAGE_SUBSCRIBED("success.message.subscribed"),
     SUCCESS_MESSAGE_UNSUBSCRIBED("success.message.unsubscribed"),
