@@ -31,8 +31,8 @@ public class NotificationServiceImpl implements NotificationService {
                         new TextMessage(getMessage(NOTIFICATION_MESSAGE_DUPLICATE_ISSUE));
 
                 List<Message> messages = Arrays.asList(
-                        textMessage,
-                        NotificationBubbleBuilder.createNotifyIssueBubble(notificationBubbleDto)
+                        NotificationBubbleBuilder.createNotifyIssueBubble(notificationBubbleDto),
+                        textMessage
                 );
 
                 PushMessageRequest pushMessageRequest = new PushMessageRequest
