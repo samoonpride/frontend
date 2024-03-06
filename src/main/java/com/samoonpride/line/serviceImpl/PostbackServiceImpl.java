@@ -74,6 +74,13 @@ public class PostbackServiceImpl implements PostbackService {
         return new TextMessage(getMessage(SUCCESS_MESSAGE_CREATED_ISSUE));
     }
 
+    private TextMessage handleUnsubscribeIssue(UserDto userDto, PostbackResponse postbackResponse) {
+        subscribeService.unsubscribe(userDto.getUserId(), postbackResponse.getIssueId());
+        log.info("Unsubscribe issue success");
+        log.info("Send unsubscribe issue success message");
+        return new TextMessage(getMessage(SUCCESS_MESSAGE_UNSUBSCRIBED));
+    }
+
     private PostbackResponse mapPostbackContentToPostbackResponse(PostbackContent postbackContent) {
         JSONObject jsonObject = new JSONObject(postbackContent.data());
         log.info("Postback content: " + jsonObject);
@@ -87,12 +94,5 @@ public class PostbackServiceImpl implements PostbackService {
 
         // Create PostbackResponse object
         return new PostbackResponse(action, null);
-    }
-
-    private TextMessage handleUnsubscribeIssue(UserDto userDto, PostbackResponse postbackResponse) {
-        subscribeService.unsubscribe(userDto.getUserId(), postbackResponse.getIssueId());
-        log.info("Unsubscribe issue success");
-        log.info("Send unsubscribe issue success message");
-        return new TextMessage(getMessage(SUCCESS_MESSAGE_UNSUBSCRIBED));
     }
 }
