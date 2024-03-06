@@ -1,5 +1,6 @@
 package com.samoonpride.line.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -19,6 +21,8 @@ public class CreateIssueRequest {
     private Double latitude;
     private Double longitude;
     private List<MediaDto> media = new ArrayList<>();
+    @JsonIgnore
+    private Date createdDate = new Date();
 
     public CreateIssueRequest(UserDto userDto) {
         this.user = userDto;

@@ -1,11 +1,13 @@
 package com.samoonpride.line.serviceImpl;
 
 import com.samoonpride.line.config.ApiConfig;
+import com.samoonpride.line.config.AppConfig;
 import com.samoonpride.line.config.WebClientConfig;
 import com.samoonpride.line.dto.IssueBubbleDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.service.IssueListService;
+import com.samoonpride.line.utils.NotificationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.ParameterizedTypeReference;
@@ -108,5 +110,24 @@ public class IssueListServiceImpl implements IssueListService {
         log.info("Subscribed Issue");
         log.info("IssueBubbleDtoList: " + issueBubbleDtoList);
         return issueBubbleDtoList;
+    }
+
+    @Override
+    public void deleteCreatedIssueTimeout() {
+        List<CreateIssueRequest> deletedIssues = new ArrayList<>();
+        createIssueRequestList.removeIf(createIssueRequest -> {
+            long timeout = createIssueRequest.getCreatedDate().getTime() + AppConfig.getIssueCreationTimeout();
+            if (timeout < System.currentTimeMillis()) {
+                deletedIssues.add(createIssueRequest);
+                return true;
+            }
+            return false;
+        });
+
+        // Notify users for deleted issues
+        for (CreateIssueRequest deletedIssue : deletedIssues) {
+            log.info("Issue creation timeout: {}", deletedIssue);
+            NotificationUtils.notificationIssueTimeout(deletedIssue);
+        }
     }
 }

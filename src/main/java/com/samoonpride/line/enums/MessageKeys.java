@@ -25,7 +25,7 @@ public enum MessageKeys {
     CREATE_ISSUE_MESSAGE_CANCEL("create.issue.message.cancel"),
     //# notification messages
     NOTIFICATION_MESSAGE_SUBSCRIBED_ISSUE("notification.message.subscribed.issue"),
-    NOTIFICATION_MESSAGE_DUPLICATE_ISSUE("notification.message.duplicate.issue");
-
+    NOTIFICATION_MESSAGE_DUPLICATE_ISSUE("notification.message.duplicate.issue"),
+    NOTIFICATION_MESSAGE_ISSUE_CREATION_TIMEOUT("notification.message.issue.creation.timeout");
     private final String key;
 }

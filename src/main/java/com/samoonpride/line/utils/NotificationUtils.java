@@ -1,28 +1,25 @@
-package com.samoonpride.line.serviceImpl;
+package com.samoonpride.line.utils;
 
 import com.linecorp.bot.messaging.model.Message;
 import com.linecorp.bot.messaging.model.PushMessageRequest;
 import com.linecorp.bot.messaging.model.TextMessage;
 import com.samoonpride.line.config.LineConfig;
 import com.samoonpride.line.dto.NotificationBubbleDto;
+import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.messaging.bubble.NotificationBubbleBuilder;
-import com.samoonpride.line.service.NotificationService;
-import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Service;
+import lombok.experimental.UtilityClass;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
-import static com.samoonpride.line.enums.MessageKeys.NOTIFICATION_MESSAGE_DUPLICATE_ISSUE;
-import static com.samoonpride.line.enums.MessageKeys.NOTIFICATION_MESSAGE_SUBSCRIBED_ISSUE;
+import static com.samoonpride.line.enums.MessageKeys.*;
 
-@Service
-@AllArgsConstructor
-public class NotificationServiceImpl implements NotificationService {
-    @Override
-    public void notificationIssue(List<NotificationBubbleDto> notificationBubbleDtoList) {
+@UtilityClass
+public class NotificationUtils {
+    public static void notificationUpdateStatusIssue(List<NotificationBubbleDto> notificationBubbleDtoList) {
         for (NotificationBubbleDto notificationBubbleDto : notificationBubbleDtoList) {
             for (String lineUserId : notificationBubbleDto.getLineUserIds()) {
 
@@ -43,5 +40,14 @@ public class NotificationServiceImpl implements NotificationService {
                         .pushMessage(UUID.randomUUID(), pushMessageRequest);
             }
         }
+    }
+
+    public static void notificationIssueTimeout(CreateIssueRequest createIssueRequest) {
+        TextMessage textMessage = new TextMessage(getMessage(NOTIFICATION_MESSAGE_ISSUE_CREATION_TIMEOUT));
+        PushMessageRequest pushMessageRequest = new PushMessageRequest
+                .Builder(createIssueRequest.getUser().getUserId(), Collections.singletonList(textMessage))
+                .build();
+        LineConfig.getMessagingApiClient()
+                .pushMessage(UUID.randomUUID(), pushMessageRequest);
     }
 }
