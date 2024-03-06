@@ -20,4 +20,6 @@ public interface IssueListService {
     List<IssueBubbleDto> getIssuesByDistinctUser(String userId);
 
     List<IssueBubbleDto> getSubscribedIssues(String userId);
+
+    void deleteCreatedIssueTimeout();
 }
