@@ -73,6 +73,7 @@ public class MessageServiceImpl implements MessageService {
             }
         } catch (Exception e) {
             log.error("Error occurred: ", e);
+            issueListService.removeIssue(issueRequest);
             return singletonList(new TextMessage(ERROR_MESSAGE));
         } finally {
             log.info("Current issue: {}", issueRequest);
