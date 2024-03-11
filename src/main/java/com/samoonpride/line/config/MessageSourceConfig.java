@@ -2,12 +2,10 @@ package com.samoonpride.line.config;
 
 import com.samoonpride.line.enums.MessageKeys;
 import org.springframework.context.MessageSource;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 
 import java.util.Locale;
-import java.util.Objects;
 
 @Configuration
 public class MessageSourceConfig {

@@ -42,6 +42,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<Message> handleMessage(UserDto userDto, MessageContent message) {
         log.info("Message received from user: {}", userDto.getUserId());
+        log.info("Message: {}", message);
         CreateIssueRequest issueRequest = issueListService.findByUserId(userDto);
         try {
             if (message instanceof TextMessageContent) {
@@ -69,7 +70,7 @@ public class MessageServiceImpl implements MessageService {
                             return singletonList(new TextMessage(ISSUE_SUCCESS_MESSAGE));
                         });
             } else {
-                return singletonList(issueService.generateIssueIncompleteMessage(issueRequest));
+                return singletonList(issueService.generateIssueIncompleteMessage(message,issueRequest));
             }
         } catch (Exception e) {
             log.error("Error occurred: ", e);
