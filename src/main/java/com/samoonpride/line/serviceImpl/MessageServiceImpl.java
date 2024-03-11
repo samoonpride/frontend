@@ -8,6 +8,7 @@ import com.samoonpride.line.dto.MediaDto;
 import com.samoonpride.line.dto.UserDto;
 import com.samoonpride.line.dto.request.CreateIssueRequest;
 import com.samoonpride.line.service.MessageService;
+import com.samoonpride.line.utils.NotificationUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -21,8 +22,7 @@ import java.util.stream.IntStream;
 
 import static com.samoonpride.line.config.MessageSourceConfig.getMessage;
 import static com.samoonpride.line.enums.MessageCommandEnum.*;
-import static com.samoonpride.line.enums.MessageKeys.CREATE_ISSUE_MESSAGE_CANCEL;
-import static com.samoonpride.line.enums.MessageKeys.MESSAGE_ISSUE_NOT_FOUND;
+import static com.samoonpride.line.enums.MessageKeys.*;
 import static com.samoonpride.line.messaging.carousel.IssueCarouselBuilder.createIssueCarousel;
 import static java.util.Collections.singletonList;
 
@@ -70,7 +70,7 @@ public class MessageServiceImpl implements MessageService {
                             return singletonList(new TextMessage(ISSUE_SUCCESS_MESSAGE));
                         });
             } else {
-                return singletonList(issueService.generateIssueIncompleteMessage(message,issueRequest));
+                return singletonList(issueService.generateIssueIncompleteMessage(message, issueRequest));
             }
         } catch (Exception e) {
             log.error("Error occurred: ", e);
@@ -93,6 +93,13 @@ public class MessageServiceImpl implements MessageService {
             log.info("Command: {}", command);
             return executeCommand(issue, command);
         } else {
+            if (issue.getTitle() != null) {
+                NotificationUtils.pushMessage(
+                        issue.getUser().getUserId(),
+                        new TextMessage(getMessage(CREATE_ISSUE_MESSAGE_CHANGE_TITLE, new Object[]{issue.getTitle(), text}))
+                );
+            }
+
             issue.setTitle(text);
         }
         return null;

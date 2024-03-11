@@ -50,4 +50,12 @@ public class NotificationUtils {
         LineConfig.getMessagingApiClient()
                 .pushMessage(UUID.randomUUID(), pushMessageRequest);
     }
+
+    public static void pushMessage(String userId, Message message) {
+        PushMessageRequest pushMessageRequest = new PushMessageRequest
+                .Builder(userId, Collections.singletonList(message))
+                .build();
+        LineConfig.getMessagingApiClient()
+                .pushMessage(UUID.randomUUID(), pushMessageRequest);
+    }
 }

@@ -24,6 +24,7 @@ public enum MessageKeys {
     SUCCESS_MESSAGE_CREATED_ISSUE("success.message.created.issue"),
     //# create issue messages
     CREATE_ISSUE_MESSAGE_CANCEL("create.issue.message.cancel"),
+    CREATE_ISSUE_MESSAGE_CHANGE_TITLE("create.issue.message.change.title"),
     //# notification messages
     NOTIFICATION_MESSAGE_SUBSCRIBED_ISSUE("notification.message.subscribed.issue"),
     NOTIFICATION_MESSAGE_DUPLICATE_ISSUE("notification.message.duplicate.issue"),
