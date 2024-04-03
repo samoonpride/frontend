@@ -1,6 +1,6 @@
 package com.samoonpride.line.service;
 
-public interface SubscribeService {
+public interface SubscriptionService {
     void subscribe(String lineUserId, String issueId);
 
     void unsubscribe(String lineUserId, String issueId);

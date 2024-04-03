@@ -22,7 +22,7 @@ import static com.samoonpride.line.enums.MessageKeys.SUCCESS_MESSAGE_CREATED_ISS
 @AllArgsConstructor
 @Service
 public class PostbackServiceImpl implements PostbackService {
-    private SubscribeServiceImpl subscribeService;
+    private SubscriptionServiceImpl subscribeService;
     private IssueListServiceImpl issueListService;
 
     @Override
