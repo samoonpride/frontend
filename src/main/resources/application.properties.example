@@ -3,10 +3,10 @@ app.url=
 backend.url=
 server.port=8081
 # Config
-api.backend.url=
-api.voice.to.text.url=
-api.similarity.checker.issue.url=
-api.similarity.checker.sentence.url=
+api.backend.url=http://api-backend:8080/api
+api.voice.to.text.url=http://voice-to-text:8001/transcribe
+api.similarity.checker.issue.url=http://similarity-checker:8002/similarity/issue
+api.similarity.checker.sentence.url=http://similarity-checker:8002/similarity/sentence
 # timeout in milliseconds
 issue.creation.timeout=600000
 # Thumbnail
